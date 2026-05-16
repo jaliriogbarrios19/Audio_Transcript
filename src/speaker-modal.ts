@@ -15,10 +15,10 @@ export class SpeakerModal extends Modal {
 
   onOpen() {
     const { contentEl } = this;
-    contentEl.createEl("h3", { text: "Speaker Configuration" });
+    contentEl.createEl("h3", { text: "Configuración de hablantes" });
 
     new Setting(contentEl)
-      .setName("Number of speakers")
+      .setName("Número de hablantes")
       .addText((text) => {
         text.setPlaceholder("2");
         text.inputEl.type = "number";
@@ -34,7 +34,7 @@ export class SpeakerModal extends Modal {
 
     new Setting(contentEl).addButton((btn) =>
       btn
-        .setButtonText("Start Transcription")
+        .setButtonText("Iniciar transcripción")
         .setCta()
         .onClick(() => this.submit())
     );
@@ -51,10 +51,10 @@ export class SpeakerModal extends Modal {
       const row = this.namesContainer.createDiv(
           "audio-transcript-speaker-row"
       );
-      row.createEl("label", { text: `Speaker ${i + 1}` });
+      row.createEl("label", { text: `Hablante ${i + 1}` });
       const input = row.createEl("input", {
         type: "text",
-        placeholder: `Name for speaker ${i + 1}`,
+        placeholder: `Nombre del hablante ${i + 1}`,
       });
       this.nameFields.push(input);
     }

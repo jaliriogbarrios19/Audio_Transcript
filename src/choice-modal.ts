@@ -12,7 +12,7 @@ export class ChoiceModal extends Modal {
 
   onOpen() {
     const { contentEl } = this;
-    contentEl.createEl("h3", { text: "¿Qué querés hacer?" });
+    contentEl.createEl("h3", { text: "¿Qué quieres hacer?" });
 
     const btnContainer = contentEl.createDiv({
       attr: { style: "display: flex; gap: 12px; margin-top: 16px;" },

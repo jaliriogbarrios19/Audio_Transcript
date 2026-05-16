@@ -37,8 +37,8 @@ export class SettingsTab extends PluginSettingTab {
     containerEl.createEl("h2", { text: "Audio Transcript" });
 
     new Setting(containerEl)
-      .setName("Provider")
-      .setDesc("Speech-to-text provider to use")
+      .setName("Proveedor")
+      .setDesc("Proveedor de voz a texto")
       .addDropdown((dropdown) => {
         for (const { value, label } of PROVIDERS) {
           dropdown.addOption(value, label);
@@ -68,7 +68,7 @@ export class SettingsTab extends PluginSettingTab {
     if (this.plugin.settings.provider === "assemblyai") {
       new Setting(containerEl)
         .setName("Modelo")
-        .setDesc("Universal-3 Pro: máxima precisión, speaker diarization avanzada. Universal-2: más rápido y económico.")
+        .setDesc("Universal-3 Pro: máxima precisión, diarización de hablantes avanzada. Universal-2: más rápido y económico.")
         .addDropdown((dropdown) =>
           dropdown
             .addOption("universal-3-pro", "Universal-3 Pro")
@@ -84,9 +84,9 @@ export class SettingsTab extends PluginSettingTab {
     }
 
     // Show all keys in an advanced section
-    containerEl.createEl("h3", { text: "All API Keys" });
+    containerEl.createEl("h3", { text: "Todas las API Keys" });
     containerEl.createEl("p", {
-      text: "Keys are stored locally in your vault's plugin data.",
+      text: "Las claves se almacenan localmente en los datos del plugin.",
       cls: "setting-item-description",
     });
 
@@ -128,8 +128,8 @@ export class SettingsTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Wrap in callout")
-      .setDesc("Insert transcription inside a >[!transcription] callout block")
+      .setName("Insertar en callout")
+      .setDesc("Insertar la transcripción dentro de un bloque >[!transcription]")
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.insertAsCallout)
@@ -147,19 +147,19 @@ export class SettingsTab extends PluginSettingTab {
   ): void {
     new Setting(container).setName(name).addText((text) => {
       text
-        .setPlaceholder("Enter your API key")
+        .setPlaceholder("Ingresa tu API key")
         .setValue(this.plugin.settings[key]);
       text.inputEl.type = "password";
 
       const toggleBtn = text.inputEl.parentElement?.createEl("button", {
-        text: "Show",
+        text: "Mostrar",
         cls: "audio-transcript-toggle-key",
       });
       if (toggleBtn) {
         toggleBtn.onclick = () => {
           const isPassword = text.inputEl.type === "password";
           text.inputEl.type = isPassword ? "text" : "password";
-          toggleBtn.textContent = isPassword ? "Hide" : "Show";
+          toggleBtn.textContent = isPassword ? "Ocultar" : "Mostrar";
         };
       }
 

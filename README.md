@@ -1,27 +1,27 @@
 # Audio Transcript
 
-Grabá o transcribí audios directamente desde Obsidian con identificación de hablantes. Usa Gladia, Deepgram o AssemblyAI como motor de transcripción.
+Graba o transcribe audios directamente desde Obsidian con identificación de hablantes. Usa Gladia, Deepgram o AssemblyAI como motor de transcripción.
 
 ## Instalación
 
 ### Opción A — BRAT (recomendada)
 
-1. Instalá [BRAT](https://github.com/TfTHacker/obsidian42-brat) desde Community Plugins
-2. En BRAT, agregá este repositorio: `jaliriogbarrios19/Audio_Transcript`
-3. Activá el plugin en Settings → Community Plugins
+1. Instala [BRAT](https://github.com/TfTHacker/obsidian42-brat) desde Community Plugins
+2. En BRAT, agrega este repositorio: `jaliriogbarrios19/Audio_Transcript`
+3. Activa el plugin en Settings → Community Plugins
 
 ### Opción B — Manual
 
-1. Descargá la [última release](https://github.com/jaliriogbarrios19/Audio_Transcript/releases)
-2. Extraé en `.obsidian/plugins/audio-transcript/`
-3. Activá el plugin en Settings → Community Plugins
+1. Descarga la [última release](https://github.com/jaliriogbarrios19/Audio_Transcript/releases)
+2. Extrae en `.obsidian/plugins/audio-transcript/`
+3. Activa el plugin en Settings → Community Plugins
 
 ## Configuración
 
-1. Andá a Settings → Audio Transcript
-2. Elegí un proveedor (Gladia, Deepgram o AssemblyAI)
-3. Pegá tu API key
-4. El idioma por defecto es español — podés cambiarlo si querés
+1. Ve a Settings → Audio Transcript
+2. Elige un proveedor (Gladia, Deepgram o AssemblyAI)
+3. Pega tu API key
+4. El idioma por defecto es español — puedes cambiarlo si quieres
 
 ### ¿Dónde consigo una API key?
 
@@ -33,15 +33,15 @@ Grabá o transcribí audios directamente desde Obsidian con identificación de h
 
 ## Cómo se usa
 
-1. Abrí una nota en Obsidian
-2. Hacé click en el ícono 🎙️ de la barra lateral
-3. Elegí **Grabar audio** o **Elegir archivo**
-4. Si grabás: hablá y después click en **Detener**
-5. Poné cuántas personas hablan y sus nombres
-6. Click en **Transcribir**
+1. Abre una nota en Obsidian
+2. Haz clic en el ícono 🎙️ de la barra lateral
+3. Elige **Grabar audio** o **Elegir archivo**
+4. Si grabas: habla y después haz clic en **Detener**
+5. Pon cuántas personas hablan y sus nombres
+6. Haz clic en **Iniciar transcripción**
 7. La transcripción aparece en tu nota con timestamps
 
-También podés usar `Ctrl+P` y buscar **Grabar y transcribir** o **Transcribir archivo**.
+También puedes usar `Ctrl+P` y buscar **Grabar y transcribir** o **Transcribir archivo**.
 
 ## ¿Cómo funciona?
 

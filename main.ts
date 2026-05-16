@@ -21,7 +21,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
     this.addRibbonIcon("mic", "Transcribir", async () => {
       const view = this.app.workspace.getActiveViewOfType(MarkdownView);
       if (!view) {
-        new Notice("Abrí una nota primero");
+        new Notice("Abre una nota primero");
         return;
       }
       const choice = await new ChoiceModal(this.app).open();

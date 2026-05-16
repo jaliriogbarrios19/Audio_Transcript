@@ -19,7 +19,7 @@ export class RecordingModal extends Modal {
           audio: true,
         });
       } catch {
-        new Notice("No se pudo acceder al micrófono. Verificá los permisos.");
+        new Notice("No se pudo acceder al micrófono. Verifica los permisos.");
         resolve(null);
         return;
       }

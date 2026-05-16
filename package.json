@@ -1,0 +1,16 @@
+{
+  "name": "transcripcion-obsidian",
+  "version": "0.1.0",
+  "description": "Transcribí audios con identificación de hablantes usando Gladia, Deepgram o AssemblyAI",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.cjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.cjs production"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.24.0",
+    "obsidian": "^1.5.0",
+    "typescript": "^5.4.0"
+  }
+}

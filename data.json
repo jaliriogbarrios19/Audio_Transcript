@@ -1,0 +1,8 @@
+{
+  "provider": "assemblyai",
+  "gladiaApiKey": "4d1856de-4b73-4af4-9a28-8954ff9c296b",
+  "deepgramApiKey": "ffb082b6abaed21e62395d8c4e8d4140b9cfba2a",
+  "assemblyaiApiKey": "c0b571410d414eff8c2c9a4405011bc2",
+  "defaultLanguage": "es",
+  "insertAsCallout": true
+}

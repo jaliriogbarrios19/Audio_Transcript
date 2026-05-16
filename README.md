@@ -7,12 +7,12 @@ Grabá o transcribí audios directamente desde Obsidian con identificación de h
 ### Opción A — BRAT (recomendada)
 
 1. Instalá [BRAT](https://github.com/TfTHacker/obsidian42-brat) desde Community Plugins
-2. En BRAT, agregá este repositorio: `jaliriogbarrios19/Transcripcion-Obsidian`
+2. En BRAT, agregá este repositorio: `jaliriogbarrios19/Audio_Transcript`
 3. Activá el plugin en Settings → Community Plugins
 
 ### Opción B — Manual
 
-1. Descargá la [última release](https://github.com/jaliriogbarrios19/Transcripcion-Obsidian/releases)
+1. Descargá la [última release](https://github.com/jaliriogbarrios19/Audio_Transcript/releases)
 2. Extraé en `.obsidian/plugins/audio-transcript/`
 3. Activá el plugin en Settings → Community Plugins
 

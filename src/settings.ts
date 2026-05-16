@@ -7,7 +7,7 @@ export interface PluginSettings {
   gladiaApiKey: string;
   deepgramApiKey: string;
   assemblyaiApiKey: string;
-  assemblyaiModel: "universal-2" | "universal-3";
+  assemblyaiModel: "universal-2" | "universal-3-pro";
   defaultLanguage: string;
   insertAsCallout: boolean;
 }
@@ -17,7 +17,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   gladiaApiKey: "",
   deepgramApiKey: "",
   assemblyaiApiKey: "",
-  assemblyaiModel: "universal-3",
+  assemblyaiModel: "universal-3-pro",
   defaultLanguage: "es",
   insertAsCallout: true,
 };
@@ -68,16 +68,16 @@ export class SettingsTab extends PluginSettingTab {
     if (this.plugin.settings.provider === "assemblyai") {
       new Setting(containerEl)
         .setName("Modelo")
-        .setDesc("Universal-3: más preciso, speaker diarization mejorada. Universal-2: más rápido y económico.")
+        .setDesc("Universal-3 Pro: máxima precisión, speaker diarization avanzada. Universal-2: más rápido y económico.")
         .addDropdown((dropdown) =>
           dropdown
-            .addOption("universal-3", "Universal-3")
+            .addOption("universal-3-pro", "Universal-3 Pro")
             .addOption("universal-2", "Universal-2")
             .setValue(this.plugin.settings.assemblyaiModel)
             .onChange(async (v: string) => {
               this.plugin.settings.assemblyaiModel = v as
                 | "universal-2"
-                | "universal-3";
+                | "universal-3-pro";
               await this.plugin.saveSettings();
             })
         );
@@ -94,18 +94,38 @@ export class SettingsTab extends PluginSettingTab {
     this.addApiKeyField(containerEl, "Deepgram", "deepgramApiKey");
     this.addApiKeyField(containerEl, "AssemblyAI", "assemblyaiApiKey");
 
+    const LANGUAGES: { value: string; label: string }[] = [
+      { value: "es", label: "Español" },
+      { value: "en", label: "English" },
+      { value: "pt", label: "Português" },
+      { value: "fr", label: "Français" },
+      { value: "de", label: "Deutsch" },
+      { value: "it", label: "Italiano" },
+      { value: "ja", label: "日本語" },
+      { value: "zh", label: "中文" },
+      { value: "ar", label: "العربية" },
+      { value: "ru", label: "Русский" },
+      { value: "hi", label: "हिन्दी" },
+      { value: "nl", label: "Nederlands" },
+      { value: "pl", label: "Polski" },
+      { value: "tr", label: "Türkçe" },
+      { value: "ko", label: "한국어" },
+    ];
+
     new Setting(containerEl)
-      .setName("Default language")
-      .setDesc("ISO code: es, en, fr, pt...")
-      .addText((text) =>
-        text
-          .setPlaceholder("es")
+      .setName("Idioma")
+      .setDesc("Idioma del audio a transcribir")
+      .addDropdown((dropdown) => {
+        for (const { value, label } of LANGUAGES) {
+          dropdown.addOption(value, label);
+        }
+        dropdown
           .setValue(this.plugin.settings.defaultLanguage)
-          .onChange(async (value) => {
-            this.plugin.settings.defaultLanguage = value;
+          .onChange(async (v: string) => {
+            this.plugin.settings.defaultLanguage = v;
             await this.plugin.saveSettings();
-          })
-      );
+          });
+      });
 
     new Setting(containerEl)
       .setName("Wrap in callout")

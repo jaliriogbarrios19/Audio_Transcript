@@ -1,4 +1,4 @@
-# Transcripción Obsidian
+# Audio Transcript
 
 Grabá o transcribí audios directamente desde Obsidian con identificación de hablantes. Usa Gladia, Deepgram o AssemblyAI como motor de transcripción.
 
@@ -13,12 +13,12 @@ Grabá o transcribí audios directamente desde Obsidian con identificación de h
 ### Opción B — Manual
 
 1. Descargá la [última release](https://github.com/jaliriogbarrios19/Transcripcion-Obsidian/releases)
-2. Extraé en `.obsidian/plugins/transcripcion-obsidian/`
+2. Extraé en `.obsidian/plugins/audio-transcript/`
 3. Activá el plugin en Settings → Community Plugins
 
 ## Configuración
 
-1. Andá a Settings → Transcripción Obsidian
+1. Andá a Settings → Audio Transcript
 2. Elegí un proveedor (Gladia, Deepgram o AssemblyAI)
 3. Pegá tu API key
 4. El idioma por defecto es español — podés cambiarlo si querés

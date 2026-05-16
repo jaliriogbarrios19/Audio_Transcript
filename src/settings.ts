@@ -34,7 +34,7 @@ export class SettingsTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "Transcripción Obsidian" });
+    containerEl.createEl("h2", { text: "Audio Transcript" });
 
     new Setting(containerEl)
       .setName("Provider")
@@ -153,7 +153,7 @@ export class SettingsTab extends PluginSettingTab {
 
       const toggleBtn = text.inputEl.parentElement?.createEl("button", {
         text: "Show",
-        cls: "transcripcion-obsidian-toggle-key",
+        cls: "audio-transcript-toggle-key",
       });
       if (toggleBtn) {
         toggleBtn.onclick = () => {

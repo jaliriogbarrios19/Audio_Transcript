@@ -66,7 +66,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
     const apiKey = this.getApiKey();
     if (!apiKey) {
       new Notice(
-        `No API key set for ${this.settings.provider}. Settings → Transcripción Obsidian.`
+        `No API key set for ${this.settings.provider}. Settings → Audio Transcript.`
       );
       return;
     }
@@ -91,7 +91,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
     const apiKey = this.getApiKey();
     if (!apiKey) {
       new Notice(
-        `No API key set for ${this.settings.provider}. Settings → Transcripción Obsidian.`
+        `No API key set for ${this.settings.provider}. Settings → Audio Transcript.`
       );
       return;
     }
@@ -151,7 +151,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
       if (err instanceof DOMException && err.name === "AbortError") return;
       const message = err instanceof Error ? err.message : "Error desconocido";
       new Notice(`Falló la transcripción: ${message}`);
-      console.error("[Transcripción Obsidian]", err);
+      console.error("[Audio Transcript]", err);
     } finally {
       if (this.activeNotice === notice) this.activeNotice = null;
       if (this.abortController === controller) this.abortController = null;

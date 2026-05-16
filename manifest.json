@@ -1,6 +1,6 @@
 {
-  "id": "transcripcion-obsidian",
-  "name": "Transcripción Obsidian",
+  "id": "audio-transcript",
+  "name": "Audio Transcript",
   "version": "0.1.1",
   "minAppVersion": "1.5.0",
   "description": "Transcribí audios con identificación de hablantes usando Gladia, Deepgram o AssemblyAI",

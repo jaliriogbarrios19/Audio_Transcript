@@ -1,42 +1,42 @@
-.transcripcion-obsidian-speaker-names {
+.audio-transcript-speaker-names {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin: 12px 0;
 }
 
-.transcripcion-obsidian-speaker-row {
+.audio-transcript-speaker-row {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.transcripcion-obsidian-speaker-row label {
+.audio-transcript-speaker-row label {
   min-width: 80px;
   font-weight: 500;
 }
 
-.transcripcion-obsidian-speaker-row input {
+.audio-transcript-speaker-row input {
   flex: 1;
 }
 
-.transcripcion-obsidian-status {
+.audio-transcript-status {
   padding: 8px 12px;
   border-radius: 4px;
   font-size: 13px;
 }
 
-.transcripcion-obsidian-status.loading {
+.audio-transcript-status.loading {
   background: var(--background-modifier-hover);
   color: var(--text-muted);
 }
 
-.transcripcion-obsidian-status.error {
+.audio-transcript-status.error {
   background: var(--background-modifier-error);
   color: var(--text-error);
 }
 
-.transcripcion-obsidian-status.success {
+.audio-transcript-status.success {
   background: var(--background-modifier-success);
   color: var(--text-success);
 }

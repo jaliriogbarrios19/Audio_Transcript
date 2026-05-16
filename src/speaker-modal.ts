@@ -29,7 +29,7 @@ export class SpeakerModal extends Modal {
       });
 
     this.namesContainer = contentEl.createDiv(
-      "transcripcion-obsidian-speaker-names"
+      "audio-transcript-speaker-names"
     );
 
     new Setting(contentEl).addButton((btn) =>
@@ -49,7 +49,7 @@ export class SpeakerModal extends Modal {
 
     for (let i = 0; i < count; i++) {
       const row = this.namesContainer.createDiv(
-        "transcripcion-obsidian-speaker-row"
+          "audio-transcript-speaker-row"
       );
       row.createEl("label", { text: `Speaker ${i + 1}` });
       const input = row.createEl("input", {

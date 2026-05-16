@@ -60,7 +60,7 @@ export class RecordingModal extends Modal {
     contentEl.createEl("h3", { text: "Grabando..." });
 
     this.statusEl = contentEl.createDiv({
-      cls: "transcripcion-obsidian-status loading",
+      cls: "audio-transcript-status loading",
       text: "● Grabando",
     });
 

@@ -1,6 +1,8 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type DiaryTranscriberPlugin from "../main";
-import { TranscriptionProvider, PROVIDERS } from "./types";
+import { TranscriptionProvider, PROVIDERS, DIARIZATION_WARNING } from "./types";
+import { PROVIDER_REGISTRY } from "./providers/registry";
+import { t, type LocaleStrings } from "./locales";
 
 export interface PluginSettings {
   provider: TranscriptionProvider;
@@ -8,9 +10,19 @@ export interface PluginSettings {
   deepgramApiKey: string;
   assemblyaiApiKey: string;
   assemblyaiModel: "universal-2" | "universal-3-pro";
+  whisperApiKey: string;
+  groqApiKey: string;
+  whisperLocalUrl: string;
   defaultLanguage: string;
+  languageDetection: "auto" | "manual";
   insertAsCallout: boolean;
+  outputTemplate: string;
+  audioFolder: string;
+  locale: "es" | "en";
 }
+
+export const DEFAULT_TEMPLATE =
+  "**{speaker}** `{time}`\n{text}";
 
 export const DEFAULT_SETTINGS: PluginSettings = {
   provider: "gladia",
@@ -18,8 +30,15 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   deepgramApiKey: "",
   assemblyaiApiKey: "",
   assemblyaiModel: "universal-3-pro",
+  whisperApiKey: "",
+  groqApiKey: "",
+  whisperLocalUrl: "http://localhost:8080",
   defaultLanguage: "es",
+  languageDetection: "manual",
   insertAsCallout: true,
+  outputTemplate: DEFAULT_TEMPLATE,
+  audioFolder: "",
+  locale: "es",
 };
 
 export class SettingsTab extends PluginSettingTab {
@@ -33,9 +52,27 @@ export class SettingsTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
+    const L = (k: keyof LocaleStrings) => t(k, this.plugin.settings.locale);
 
     containerEl.createEl("h2", { text: "Audio Transcript" });
 
+    // ── Plugin language ──────────────────────────────────
+    new Setting(containerEl)
+      .setName("Idioma del plugin")
+      .setDesc("Español o English")
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("es", "Español")
+          .addOption("en", "English")
+          .setValue(this.plugin.settings.locale)
+          .onChange(async (v: string) => {
+            this.plugin.settings.locale = v as "es" | "en";
+            await this.plugin.saveSettings();
+            this.display();
+          })
+      );
+
+    // ── Provider selector ─────────────────────────────────
     new Setting(containerEl)
       .setName("Proveedor")
       .setDesc("Proveedor de voz a texto")
@@ -52,38 +89,169 @@ export class SettingsTab extends PluginSettingTab {
           });
       });
 
-    // --- Provider-specific API key fields ---
-    if (this.plugin.settings.provider === "gladia") {
-      this.addApiKeyField(containerEl, "Gladia API Key", "gladiaApiKey");
-    } else if (this.plugin.settings.provider === "deepgram") {
-      this.addApiKeyField(containerEl, "Deepgram API Key", "deepgramApiKey");
-    } else {
-      this.addApiKeyField(
-        containerEl,
-        "AssemblyAI API Key",
-        "assemblyaiApiKey"
-      );
+    const meta = PROVIDER_REGISTRY[this.plugin.settings.provider];
+
+    // ── Diarization warning ────────────────────────────────
+    if (!meta.supportsDiarization) {
+      const warning = containerEl.createDiv({
+        cls: "audio-transcript-warning",
+        text: DIARIZATION_WARNING[meta.id] ?? "",
+      });
+      warning.style.cssText =
+        "background: var(--background-modifier-warning); color: var(--text-warning); padding: 8px 12px; border-radius: 4px; margin-bottom: 12px;";
     }
 
+    // ── Provider-specific API key / URL ────────────────────
+    if (meta.requiresApiKey) {
+      this.addApiKeyField(
+        containerEl,
+        `${meta.label} API Key`,
+        meta.apiKeyField
+      );
+    } else {
+      this.addWhisperLocalUrlField(containerEl);
+    }
+
+    // ── Model selector (AssemblyAI only for now) ───────────
     if (this.plugin.settings.provider === "assemblyai") {
+      this.addModelField(containerEl);
+    }
+
+    // ── Test API Key button ────────────────────────────────
+    if (meta.testEndpoint) {
       new Setting(containerEl)
-        .setName("Modelo")
-        .setDesc("Universal-3 Pro: máxima precisión, diarización de hablantes avanzada. Universal-2: más rápido y económico.")
-        .addDropdown((dropdown) =>
-          dropdown
-            .addOption("universal-3-pro", "Universal-3 Pro")
-            .addOption("universal-2", "Universal-2")
-            .setValue(this.plugin.settings.assemblyaiModel)
-            .onChange(async (v: string) => {
-              this.plugin.settings.assemblyaiModel = v as
-                | "universal-2"
-                | "universal-3-pro";
-              await this.plugin.saveSettings();
-            })
+        .setName("Probar conexión")
+        .setDesc(`Verifica que la API key de ${meta.label} funciona`)
+        .addButton((btn) =>
+          btn.setButtonText("Probar").onClick(async () => {
+            btn.setDisabled(true);
+            btn.setButtonText("Probando...");
+            const key = this.plugin.settings[
+              meta.apiKeyField
+            ] as string;
+            const ok = await this.testApiKey(
+              meta.testEndpoint!,
+              meta.id,
+              key
+            );
+            btn.setButtonText(ok ? "✓ Conectado" : "✗ Falló");
+            btn.setDisabled(false);
+            setTimeout(() => btn.setButtonText("Probar"), 3000);
+          })
         );
     }
 
-    // Show all keys in an advanced section
+    // ── Language ───────────────────────────────────────────
+    containerEl.createEl("h3", { text: "Idioma" });
+
+    new Setting(containerEl)
+      .setName("Detección de idioma")
+      .setDesc(
+        "Auto: el proveedor detecta el idioma. Manual: usás el idioma de abajo."
+      )
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("manual", "Manual")
+          .addOption("auto", "Automática")
+          .setValue(this.plugin.settings.languageDetection)
+          .onChange(async (v: string) => {
+            this.plugin.settings.languageDetection = v as
+              | "auto"
+              | "manual";
+            await this.plugin.saveSettings();
+            this.display();
+          })
+      );
+
+    if (this.plugin.settings.languageDetection === "manual") {
+      const LANGUAGES: { value: string; label: string }[] = [
+        { value: "es", label: "Español" },
+        { value: "en", label: "English" },
+        { value: "pt", label: "Português" },
+        { value: "fr", label: "Français" },
+        { value: "de", label: "Deutsch" },
+        { value: "it", label: "Italiano" },
+        { value: "ja", label: "日本語" },
+        { value: "zh", label: "中文" },
+        { value: "ar", label: "العربية" },
+        { value: "ru", label: "Русский" },
+        { value: "hi", label: "हिन्दी" },
+        { value: "nl", label: "Nederlands" },
+        { value: "pl", label: "Polski" },
+        { value: "tr", label: "Türkçe" },
+        { value: "ko", label: "한국어" },
+      ];
+
+      new Setting(containerEl)
+        .setName("Idioma predeterminado")
+        .setDesc("Idioma del audio a transcribir")
+        .addDropdown((dropdown) => {
+          for (const { value, label } of LANGUAGES) {
+            dropdown.addOption(value, label);
+          }
+          dropdown
+            .setValue(this.plugin.settings.defaultLanguage)
+            .onChange(async (v: string) => {
+              this.plugin.settings.defaultLanguage = v;
+              await this.plugin.saveSettings();
+            });
+        });
+    }
+
+    // ── Output format ──────────────────────────────────────
+    containerEl.createEl("h3", { text: "Formato de salida" });
+
+    new Setting(containerEl)
+      .setName("Plantilla de salida")
+      .setDesc(
+        "Variables: {speaker}, {time}, {text}. Cada bloque de hablante se separa con un salto de línea doble."
+      )
+      .addTextArea((text) => {
+        text
+          .setPlaceholder(DEFAULT_TEMPLATE)
+          .setValue(this.plugin.settings.outputTemplate)
+          .onChange(async (value) => {
+            this.plugin.settings.outputTemplate =
+              value || DEFAULT_TEMPLATE;
+            await this.plugin.saveSettings();
+          });
+        text.inputEl.rows = 3;
+        text.inputEl.style.width = "100%";
+      });
+
+    new Setting(containerEl)
+      .setName("Insertar en callout")
+      .setDesc(
+        "Envuelve la transcripción en un bloque >[!transcription] plegable"
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.insertAsCallout)
+          .onChange(async (value) => {
+            this.plugin.settings.insertAsCallout = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    // ── Audio folder ───────────────────────────────────────
+    containerEl.createEl("h3", { text: "Archivos de audio" });
+
+    new Setting(containerEl)
+      .setName("Carpeta de grabaciones")
+      .setDesc(
+        "Ruta relativa al vault donde guardar los audios. Vacío = misma carpeta que la nota activa."
+      )
+      .addText((text) => {
+        text
+          .setPlaceholder("Ej: Audios/Grabaciones")
+          .setValue(this.plugin.settings.audioFolder)
+          .onChange(async (value) => {
+            this.plugin.settings.audioFolder = value;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    // ── All API keys ───────────────────────────────────────
     containerEl.createEl("h3", { text: "Todas las API Keys" });
     containerEl.createEl("p", {
       text: "Las claves se almacenan localmente en los datos del plugin.",
@@ -93,62 +261,22 @@ export class SettingsTab extends PluginSettingTab {
     this.addApiKeyField(containerEl, "Gladia", "gladiaApiKey");
     this.addApiKeyField(containerEl, "Deepgram", "deepgramApiKey");
     this.addApiKeyField(containerEl, "AssemblyAI", "assemblyaiApiKey");
-
-    const LANGUAGES: { value: string; label: string }[] = [
-      { value: "es", label: "Español" },
-      { value: "en", label: "English" },
-      { value: "pt", label: "Português" },
-      { value: "fr", label: "Français" },
-      { value: "de", label: "Deutsch" },
-      { value: "it", label: "Italiano" },
-      { value: "ja", label: "日本語" },
-      { value: "zh", label: "中文" },
-      { value: "ar", label: "العربية" },
-      { value: "ru", label: "Русский" },
-      { value: "hi", label: "हिन्दी" },
-      { value: "nl", label: "Nederlands" },
-      { value: "pl", label: "Polski" },
-      { value: "tr", label: "Türkçe" },
-      { value: "ko", label: "한국어" },
-    ];
-
-    new Setting(containerEl)
-      .setName("Idioma")
-      .setDesc("Idioma del audio a transcribir")
-      .addDropdown((dropdown) => {
-        for (const { value, label } of LANGUAGES) {
-          dropdown.addOption(value, label);
-        }
-        dropdown
-          .setValue(this.plugin.settings.defaultLanguage)
-          .onChange(async (v: string) => {
-            this.plugin.settings.defaultLanguage = v;
-            await this.plugin.saveSettings();
-          });
-      });
-
-    new Setting(containerEl)
-      .setName("Insertar en callout")
-      .setDesc("Insertar la transcripción dentro de un bloque >[!transcription]")
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.insertAsCallout)
-          .onChange(async (value) => {
-            this.plugin.settings.insertAsCallout = value;
-            await this.plugin.saveSettings();
-          })
-      );
+    this.addApiKeyField(containerEl, "OpenAI Whisper", "whisperApiKey");
+    this.addApiKeyField(containerEl, "Groq", "groqApiKey");
+    this.addWhisperLocalUrlField(containerEl, true);
   }
+
+  // ── Helpers ────────────────────────────────────────────
 
   private addApiKeyField(
     container: HTMLElement,
     name: string,
-    key: "gladiaApiKey" | "deepgramApiKey" | "assemblyaiApiKey"
+    key: keyof PluginSettings
   ): void {
     new Setting(container).setName(name).addText((text) => {
       text
         .setPlaceholder("Ingresa tu API key")
-        .setValue(this.plugin.settings[key]);
+        .setValue(String(this.plugin.settings[key] ?? ""));
       text.inputEl.type = "password";
 
       const toggleBtn = text.inputEl.parentElement?.createEl("button", {
@@ -164,9 +292,85 @@ export class SettingsTab extends PluginSettingTab {
       }
 
       text.onChange(async (value) => {
-        this.plugin.settings[key] = value;
+        (this.plugin.settings as unknown as Record<string, string>)[key] = value;
         await this.plugin.saveSettings();
       });
     });
+  }
+
+  private addWhisperLocalUrlField(
+    container: HTMLElement,
+    showLabel = false
+  ): void {
+    new Setting(container)
+      .setName(showLabel ? "Whisper Local URL" : "URL del servidor")
+      .setDesc("URL del servidor whisper.cpp (ej: http://localhost:8080)")
+      .addText((text) => {
+        text
+          .setPlaceholder("http://localhost:8080")
+          .setValue(this.plugin.settings.whisperLocalUrl)
+          .onChange(async (value) => {
+            this.plugin.settings.whisperLocalUrl = value;
+            await this.plugin.saveSettings();
+          });
+      });
+  }
+
+  private addModelField(container: HTMLElement): void {
+    new Setting(container)
+      .setName("Modelo")
+      .setDesc(
+        "Universal-3 Pro: máxima precisión, diarización avanzada. Universal-2: más rápido."
+      )
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("universal-3-pro", "Universal-3 Pro")
+          .addOption("universal-2", "Universal-2")
+          .setValue(this.plugin.settings.assemblyaiModel)
+          .onChange(async (v: string) => {
+            this.plugin.settings.assemblyaiModel = v as
+              | "universal-2"
+              | "universal-3-pro";
+            await this.plugin.saveSettings();
+          })
+      );
+  }
+
+  private async testApiKey(
+    endpoint: string,
+    provider: TranscriptionProvider,
+    key: string
+  ): Promise<boolean> {
+    try {
+      let headers: Record<string, string> = {};
+      let url = endpoint;
+
+      switch (provider) {
+        case "gladia":
+          headers = { "x-gladia-key": key };
+          break;
+        case "deepgram":
+          headers = { Authorization: `Token ${key}` };
+          break;
+        case "assemblyai":
+          headers = { authorization: key };
+          break;
+        case "whisper":
+        case "groq":
+          headers = { Authorization: `Bearer ${key}` };
+          break;
+      }
+
+      const res = await fetch(url, {
+        method: "GET",
+        headers,
+      });
+
+      // 200/401/403 are valid responses (key works or has wrong scope,
+      // but the key format/network is fine). 404/500 = endpoint issue.
+      return res.status < 500;
+    } catch {
+      return false;
+    }
   }
 }

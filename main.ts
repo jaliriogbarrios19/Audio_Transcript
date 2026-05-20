@@ -1,18 +1,35 @@
-import { Editor, MarkdownFileInfo, MarkdownView, Notice, Plugin } from "obsidian";
-import { PluginSettings, DEFAULT_SETTINGS, SettingsTab } from "./src/settings";
-import { Transcriber } from "./src/transcriber";
-import { GladiaTranscriber } from "./src/providers/gladia";
-import { DeepgramTranscriber } from "./src/providers/deepgram";
-import { AssemblyAITranscriber } from "./src/providers/assemblyai";
+import {
+  Editor,
+  MarkdownFileInfo,
+  MarkdownView,
+  Notice,
+  Plugin,
+} from "obsidian";
+import {
+  PluginSettings,
+  DEFAULT_SETTINGS,
+  DEFAULT_TEMPLATE,
+  SettingsTab,
+} from "./src/settings";
+import { PROVIDER_REGISTRY } from "./src/providers/registry";
+import { RecordingModal } from "./src/recording-modal";
 import { SpeakerModal } from "./src/speaker-modal";
 import { ChoiceModal } from "./src/choice-modal";
-import { RecordingModal } from "./src/recording-modal";
-import { SpeakerMapping, Utterance } from "./src/types";
+import {
+  SpeakerMapping,
+  Utterance,
+  DIARIZATION_WARNING,
+} from "./src/types";
+import { t, type LocaleStrings } from "./src/locales";
 
 export default class DiaryTranscriberPlugin extends Plugin {
   settings!: PluginSettings;
   private activeNotice: Notice | null = null;
   private abortController: AbortController | null = null;
+
+  private L(key: keyof LocaleStrings): string {
+    return t(key, this.settings.locale);
+  }
 
   async onload() {
     await this.loadSettings();
@@ -21,10 +38,10 @@ export default class DiaryTranscriberPlugin extends Plugin {
     this.addRibbonIcon("mic", "Transcribir", async () => {
       const view = this.app.workspace.getActiveViewOfType(MarkdownView);
       if (!view) {
-        new Notice("Abre una nota primero");
+        new Notice(this.L("openNoteFirst"));
         return;
       }
-      const choice = await new ChoiceModal(this.app).open();
+      const choice = await new ChoiceModal(this.app, this.settings.locale).open();
       if (choice === "record") {
         this.startRecording(view.editor);
       } else if (choice === "file") {
@@ -35,15 +52,28 @@ export default class DiaryTranscriberPlugin extends Plugin {
     this.addCommand({
       id: "record-and-transcribe",
       name: "Grabar y transcribir",
-      editorCallback: (editor: Editor, _ctx: MarkdownView | MarkdownFileInfo) =>
-        this.startRecording(editor),
+      editorCallback: (
+        editor: Editor,
+        _ctx: MarkdownView | MarkdownFileInfo
+      ) => this.startRecording(editor),
     });
 
     this.addCommand({
       id: "transcribe-file",
       name: "Transcribir archivo",
-      editorCallback: (editor: Editor, _ctx: MarkdownView | MarkdownFileInfo) =>
-        this.transcribeFile(editor),
+      editorCallback: (
+        editor: Editor,
+        _ctx: MarkdownView | MarkdownFileInfo
+      ) => this.transcribeFile(editor),
+    });
+
+    this.addCommand({
+      id: "transcribe-batch",
+      name: "Transcribir varios archivos",
+      editorCallback: (
+        editor: Editor,
+        _ctx: MarkdownView | MarkdownFileInfo
+      ) => this.transcribeBatch(editor),
     });
   }
 
@@ -60,38 +90,39 @@ export default class DiaryTranscriberPlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
-  // ── Recording flow ─────────────────────────────────────────────
+  // ── Provider helpers ──────────────────────────────────────
+
+  private get providerMeta() {
+    return PROVIDER_REGISTRY[this.settings.provider];
+  }
+
+  private getApiKey(): string {
+    const field = this.providerMeta.apiKeyField;
+    return (this.settings as unknown as Record<string, string>)[field] ?? "";
+  }
+
+  // ── Recording flow ─────────────────────────────────────────
 
   private async startRecording(editor: Editor) {
-    const apiKey = this.getApiKey();
-    if (!apiKey) {
+    if (this.providerMeta.requiresApiKey && !this.getApiKey()) {
       new Notice(
-        `No API key set for ${this.settings.provider}. Settings → Audio Transcript.`
+        `${this.L("noApiKey")} ${this.providerMeta.label}. Settings → Audio Transcript.`
       );
       return;
     }
 
-    const blob = await new RecordingModal(this.app).start();
+    const blob = await new RecordingModal(this.app, this.settings.locale).start();
     if (!blob) return;
 
-    const speakerMapping = await new SpeakerModal(this.app).open();
-    if (!speakerMapping) return;
-
-    await this.transcribeBlob(editor, blob, speakerMapping);
-
-    // Insert link to the saved audio file after transcription
-    const audioPath = await this.saveAudioFile(blob);
-    const filename = audioPath.split("/").pop() ?? audioPath;
-    this.insertAtCursor(editor, `\n📁 [[${filename}]]\n`);
+    await this.transcribeBlob(editor, blob);
   }
 
-  // ── File picker flow ───────────────────────────────────────────
+  // ── File picker flow ───────────────────────────────────────
 
   private async transcribeFile(editor: Editor) {
-    const apiKey = this.getApiKey();
-    if (!apiKey) {
+    if (this.providerMeta.requiresApiKey && !this.getApiKey()) {
       new Notice(
-        `No API key set for ${this.settings.provider}. Settings → Audio Transcript.`
+        `${this.L("noApiKey")} ${this.providerMeta.label}. Settings → Audio Transcript.`
       );
       return;
     }
@@ -99,58 +130,181 @@ export default class DiaryTranscriberPlugin extends Plugin {
     const file = await this.pickAudioFile();
     if (!file) return;
 
-    const speakerMapping = await new SpeakerModal(this.app).open();
-    if (!speakerMapping) return;
-
-    await this.transcribeBlob(editor, file, speakerMapping);
+    await this.transcribeBlob(editor, file);
   }
 
-  // ── Shared transcription ───────────────────────────────────────
+  // ── Batch flow ────────────────────────────────────────────
+
+  private async transcribeBatch(editor: Editor) {
+    if (this.providerMeta.requiresApiKey && !this.getApiKey()) {
+      new Notice(
+        `${this.L("noApiKey")} ${this.providerMeta.label}. Settings → Audio Transcript.`
+      );
+      return;
+    }
+
+    const files = await this.pickMultipleAudioFiles();
+    if (!files || files.length === 0) return;
+
+    // Speaker mapping once for all files (if diarization supported)
+    let speakerMapping: SpeakerMapping;
+    if (this.providerMeta.supportsDiarization) {
+      const mapping = await new SpeakerModal(
+        this.app,
+        this.settings.locale
+      ).open();
+      if (!mapping) return;
+      speakerMapping = mapping;
+    } else {
+      speakerMapping = { count: 1, names: ["Speaker"] };
+    }
+
+    const total = files.length;
+    const notice = new Notice("", 0);
+    const noticeEl = notice.noticeEl;
+    const titleEl = noticeEl.createDiv({
+      text: `Transcribiendo 0/${total}...`,
+    });
+    const progressBar = noticeEl.createDiv({
+      attr: {
+        style:
+          "width:100%;height:4px;background:var(--background-modifier-border);margin-top:4px;border-radius:2px;",
+      },
+    });
+    const progressFill = progressBar.createDiv({
+      attr: {
+        style:
+          "width:0%;height:100%;background:var(--interactive-accent);border-radius:2px;transition:width 0.3s;",
+      },
+    });
+
+    let completed = 0;
+    for (const file of files) {
+      try {
+        await this.transcribeBlob(
+          editor,
+          file,
+          speakerMapping,
+          true // skip speaker modal (already got mapping)
+        );
+        completed++;
+        titleEl.textContent = `Transcribiendo ${completed}/${total}...`;
+        progressFill.style.width = `${Math.round((completed / total) * 100)}%`;
+      } catch (err) {
+        completed++;
+        console.error(
+          `[Audio Transcript] Batch: file ${file.name} failed`,
+          err
+        );
+      }
+    }
+
+    notice.hide();
+    new Notice(`${completed}/${total} transcripciones completadas`);
+  }
+
+  // ── Shared transcription ───────────────────────────────────
 
   private async transcribeBlob(
     editor: Editor,
     blob: Blob,
-    speakerMapping: SpeakerMapping
+    speakerMapping?: SpeakerMapping,
+    skipSpeakerModal = false
   ) {
+    const meta = this.providerMeta;
     const apiKey = this.getApiKey();
+
+    // Diarization notice
+    if (!meta.supportsDiarization && !skipSpeakerModal) {
+      new Notice(this.L("diarizationWarning"), 5000);
+    }
+
+    // Speaker mapping — skip for providers without diarization, or when provided
+    let resolvedMapping: SpeakerMapping;
+    if (speakerMapping) {
+      resolvedMapping = speakerMapping;
+    } else if (meta.supportsDiarization) {
+      const mapping = await new SpeakerModal(
+        this.app,
+        this.settings.locale
+      ).open();
+      if (!mapping) return;
+      resolvedMapping = mapping;
+    } else {
+      resolvedMapping = { count: 1, names: ["Speaker"] };
+    }
+
+    // Progress bar UI
+    const notice = new Notice("", 0);
+    this.activeNotice = notice;
+    const startTime = Date.now();
+
+    const noticeEl = notice.noticeEl;
+    noticeEl.createDiv({
+      text: `${this.L("transcribing")} ${meta.label}...`,
+    });
+    const progressBar = noticeEl.createDiv({
+      attr: {
+        style:
+          "width:100%;height:4px;background:var(--background-modifier-border);margin-top:4px;border-radius:2px;",
+      },
+    });
+    const progressFill = progressBar.createDiv({
+      attr: {
+        style:
+          "width:0%;height:100%;background:var(--interactive-accent);border-radius:2px;transition:width 0.3s;",
+      },
+    });
 
     this.abortController?.abort();
     const controller = new AbortController();
     this.abortController = controller;
 
-    const notice = new Notice(
-      `Transcribiendo con ${this.settings.provider}...`,
-      0
-    );
-    this.activeNotice = notice;
-    const startTime = Date.now();
-
     try {
-      const transcriber = this.getTranscriber();
-      const utterances = await transcriber.transcribe(blob, apiKey, {
-        speakerNames: speakerMapping.names,
-        language: this.settings.defaultLanguage,
+      const language =
+        this.settings.languageDetection === "auto"
+          ? undefined
+          : this.settings.defaultLanguage;
+
+      const utterances = await meta.transcriber.transcribe(blob, apiKey, {
+        speakerNames: resolvedMapping.names,
+        language,
         signal: controller.signal,
         model:
           this.settings.provider === "assemblyai"
             ? this.settings.assemblyaiModel
             : undefined,
+        onProgress: (pct: number) => {
+          progressFill.style.width = `${Math.min(pct, 100)}%`;
+        },
       });
+
+      // Save audio first so timestamps can link to it
+      let audioPath: string | undefined;
+      if (blob.size > 0) {
+        audioPath = await this.saveAudioFile(blob);
+      }
 
       const formatted = this.formatTranscription(
         utterances,
-        speakerMapping.names
+        resolvedMapping.names,
+        audioPath
       );
       this.insertAtCursor(editor, formatted);
 
+      if (audioPath) {
+        const filename = audioPath.split("/").pop() ?? audioPath;
+        this.insertAtCursor(editor, `\n📁 [[${filename}]]\n`);
+      }
+
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
       notice.hide();
-      new Notice(`Transcripción lista en ${elapsed}s`);
+      new Notice(`${this.L("transcriptionReady")} ${elapsed}s`);
     } catch (err) {
       notice.hide();
       if (err instanceof DOMException && err.name === "AbortError") return;
       const message = err instanceof Error ? err.message : "Error desconocido";
-      new Notice(`Falló la transcripción: ${message}`);
+      new Notice(`${this.L("transcriptionFailed")}: ${message}`);
       console.error("[Audio Transcript]", err);
     } finally {
       if (this.activeNotice === notice) this.activeNotice = null;
@@ -158,7 +312,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
     }
   }
 
-  // ── Save audio ─────────────────────────────────────────────────
+  // ── Save audio ─────────────────────────────────────────────
 
   private async saveAudioFile(blob: Blob): Promise<string> {
     const ext = blob.type.split("/")[1]?.split(";")[0] || "webm";
@@ -166,43 +320,67 @@ export default class DiaryTranscriberPlugin extends Plugin {
     const ts = now.toISOString().replace(/[:.]/g, "-").slice(0, 19);
     const filename = `grabacion-${ts}.${ext}`;
 
-    const activeFile = this.app.workspace.getActiveFile();
-    const folder = activeFile?.parent?.path ?? "";
+    const folder = this.settings.audioFolder || this.defaultFolder();
     const filepath = folder ? `${folder}/${filename}` : filename;
 
     await this.app.vault.createBinary(filepath, await blob.arrayBuffer());
     return filepath;
   }
 
-  // ── Providers ──────────────────────────────────────────────────
-
-  private getTranscriber(): Transcriber {
-    switch (this.settings.provider) {
-      case "gladia":
-        return new GladiaTranscriber();
-      case "deepgram":
-        return new DeepgramTranscriber();
-      case "assemblyai":
-        return new AssemblyAITranscriber();
-      default:
-        throw new Error(`Unknown provider: ${this.settings.provider}`);
-    }
+  private defaultFolder(): string {
+    const activeFile = this.app.workspace.getActiveFile();
+    return activeFile?.parent?.path ?? "";
   }
 
-  private getApiKey(): string {
-    switch (this.settings.provider) {
-      case "gladia":
-        return this.settings.gladiaApiKey;
-      case "deepgram":
-        return this.settings.deepgramApiKey;
-      case "assemblyai":
-        return this.settings.assemblyaiApiKey;
-      default:
-        throw new Error(`Unknown provider: ${this.settings.provider}`);
-    }
-  }
+  // ── File picker ────────────────────────────────────────────
 
-  // ── File picker ────────────────────────────────────────────────
+  private pickMultipleAudioFiles(): Promise<File[] | null> {
+    return new Promise((resolve) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "audio/*";
+      input.multiple = true;
+
+      let resolved = false;
+      const done = (files: File[] | null) => {
+        if (resolved) return;
+        resolved = true;
+        cleanup();
+        resolve(files);
+      };
+
+      const cleanup = () => {
+        window.removeEventListener("focus", focusHandler);
+        clearTimeout(safetyTimer);
+      };
+
+      const focusHandler = () => {
+        setTimeout(() => {
+          if (!input.files || input.files.length === 0) {
+            done(null);
+          }
+        }, 300);
+      };
+
+      input.onchange = () => {
+        const list = input.files;
+        if (!list || list.length === 0) {
+          done(null);
+        } else {
+          done(Array.from(list));
+        }
+      };
+
+      const safetyTimer = setTimeout(() => {
+        if (!input.files || input.files.length === 0) {
+          done(null);
+        }
+      }, 120_000);
+
+      window.addEventListener("focus", focusHandler);
+      input.click();
+    });
+  }
 
   private pickAudioFile(): Promise<File | null> {
     return new Promise((resolve) => {
@@ -246,20 +424,30 @@ export default class DiaryTranscriberPlugin extends Plugin {
     });
   }
 
-  // ── Formatting ─────────────────────────────────────────────────
+  // ── Formatting ─────────────────────────────────────────────
 
   private formatTranscription(
     utterances: Utterance[],
-    speakerNames: string[]
+    speakerNames: string[],
+    audioPath?: string
   ): string {
     if (utterances.length === 0) {
-      return "*(No speech detected)*";
+      return `*(${this.L("noSpeech")})*`;
     }
 
-    const lines = utterances.map((u) => {
+    const template =
+      this.settings.outputTemplate || DEFAULT_TEMPLATE;
+
+    // Merge consecutive utterances from the same speaker
+    const merged = this.mergeUtterances(utterances, speakerNames);
+
+    const lines = merged.map((u) => {
       const name = speakerNames[u.speaker - 1] || `Speaker ${u.speaker}`;
-      const time = this.formatTimestamp(u.start);
-      return `**${name}** \`${time}\`` + "\n" + u.text;
+      const time = this.formatTimestamp(u.start, audioPath);
+      return template
+        .replace(/\{speaker\}/g, name)
+        .replace(/\{time\}/g, time)
+        .replace(/\{text\}/g, u.text);
     });
 
     if (this.settings.insertAsCallout) {
@@ -272,13 +460,35 @@ export default class DiaryTranscriberPlugin extends Plugin {
     return lines.join("\n\n");
   }
 
-  private formatTimestamp(seconds: number): string {
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${s.toString().padStart(2, "0")}`;
+  private mergeUtterances(
+    utterances: Utterance[],
+    speakerNames: string[]
+  ): Utterance[] {
+    const merged: Utterance[] = [];
+    for (const u of utterances) {
+      const last = merged[merged.length - 1];
+      if (last && last.speaker === u.speaker) {
+        last.text += " " + u.text;
+        last.end = u.end;
+      } else {
+        merged.push({ ...u });
+      }
+    }
+    return merged;
   }
 
-  // ── Editor insert ──────────────────────────────────────────────
+  private formatTimestamp(seconds: number, audioPath?: string): string {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    const ts = `${m}:${s.toString().padStart(2, "0")}`;
+    if (audioPath) {
+      const filename = audioPath.split("/").pop() ?? audioPath;
+      return `[${ts}](${encodeURI(filename)})`;
+    }
+    return `\`${ts}\``;
+  }
+
+  // ── Editor insert ──────────────────────────────────────────
 
   private insertAtCursor(editor: Editor, text: string) {
     const cursor = editor.getCursor();

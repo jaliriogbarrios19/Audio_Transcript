@@ -1,3 +1,5 @@
+import type { Transcriber } from "./transcriber";
+
 export interface Utterance {
   speaker: number;
   text: string;
@@ -10,6 +12,7 @@ export interface TranscriptionOptions {
   language?: string;
   signal?: AbortSignal;
   model?: string;
+  onProgress?: (pct: number) => void;
 }
 
 export interface SpeakerMapping {
@@ -17,10 +20,45 @@ export interface SpeakerMapping {
   names: string[];
 }
 
-export type TranscriptionProvider = "gladia" | "deepgram" | "assemblyai";
+export type TranscriptionProvider =
+  | "gladia"
+  | "deepgram"
+  | "assemblyai"
+  | "whisper"
+  | "groq"
+  | "whisper-local";
 
-export const PROVIDERS: { value: TranscriptionProvider; label: string }[] = [
+export interface ProviderMeta {
+  id: TranscriptionProvider;
+  label: string;
+  transcriber: Transcriber;
+  apiKeyField: keyof import("./settings").PluginSettings;
+  modelField?: keyof import("./settings").PluginSettings;
+  supportsDiarization: boolean;
+  requiresApiKey: boolean;
+  testEndpoint?: string;
+}
+
+export const PROVIDERS: {
+  value: TranscriptionProvider;
+  label: string;
+}[] = [
   { value: "gladia", label: "Gladia" },
   { value: "deepgram", label: "Deepgram" },
   { value: "assemblyai", label: "AssemblyAI" },
+  { value: "whisper", label: "OpenAI Whisper" },
+  { value: "groq", label: "Groq (Whisper)" },
+  { value: "whisper-local", label: "Whisper (local)" },
 ];
+
+export const DIARIZATION_WARNING: Record<TranscriptionProvider, string | null> =
+  {
+    gladia: null,
+    deepgram: null,
+    assemblyai: null,
+    whisper:
+      "OpenAI Whisper no tiene diarización de hablantes. La transcripción será un solo bloque de texto.",
+    groq: "Groq (Whisper) no tiene diarización de hablantes. La transcripción será un solo bloque de texto.",
+    "whisper-local":
+      "Whisper local no tiene diarización de hablantes. La transcripción será un solo bloque de texto.",
+  };

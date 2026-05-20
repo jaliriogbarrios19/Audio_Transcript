@@ -1,10 +1,21 @@
 import { App, Modal, Setting } from "obsidian";
 import { SpeakerMapping } from "./types";
+import { t, type LocaleStrings } from "./locales";
 
 export class SpeakerModal extends Modal {
   resolve: ((value: SpeakerMapping | null) => void) | null = null;
   private nameFields: HTMLInputElement[] = [];
   private namesContainer: HTMLDivElement | null = null;
+  private locale: string;
+
+  constructor(app: App, locale = "es") {
+    super(app);
+    this.locale = locale;
+  }
+
+  private L(key: keyof LocaleStrings): string {
+    return t(key, this.locale);
+  }
 
   open(): Promise<SpeakerMapping | null> {
     return new Promise((resolve) => {
@@ -15,10 +26,10 @@ export class SpeakerModal extends Modal {
 
   onOpen() {
     const { contentEl } = this;
-    contentEl.createEl("h3", { text: "Configuración de hablantes" });
+    contentEl.createEl("h3", { text: this.L("speakerConfig") });
 
     new Setting(contentEl)
-      .setName("Número de hablantes")
+      .setName(this.L("speakerCount"))
       .addText((text) => {
         text.setPlaceholder("2");
         text.inputEl.type = "number";
@@ -34,7 +45,7 @@ export class SpeakerModal extends Modal {
 
     new Setting(contentEl).addButton((btn) =>
       btn
-        .setButtonText("Iniciar transcripción")
+        .setButtonText(this.L("startTranscription"))
         .setCta()
         .onClick(() => this.submit())
     );
@@ -49,12 +60,12 @@ export class SpeakerModal extends Modal {
 
     for (let i = 0; i < count; i++) {
       const row = this.namesContainer.createDiv(
-          "audio-transcript-speaker-row"
+        "audio-transcript-speaker-row"
       );
-      row.createEl("label", { text: `Hablante ${i + 1}` });
+      row.createEl("label", { text: `Speaker ${i + 1}` });
       const input = row.createEl("input", {
         type: "text",
-        placeholder: `Nombre del hablante ${i + 1}`,
+        placeholder: `Speaker ${i + 1}`,
       });
       this.nameFields.push(input);
     }

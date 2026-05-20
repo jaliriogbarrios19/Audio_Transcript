@@ -1,7 +1,18 @@
 import { App, Modal } from "obsidian";
+import { t, type LocaleStrings } from "./locales";
 
 export class ChoiceModal extends Modal {
   private resolve: ((choice: "record" | "file" | null) => void) | null = null;
+  private locale: string;
+
+  constructor(app: App, locale = "es") {
+    super(app);
+    this.locale = locale;
+  }
+
+  private L(key: keyof LocaleStrings): string {
+    return t(key, this.locale);
+  }
 
   open(): Promise<"record" | "file" | null> {
     return new Promise((resolve) => {
@@ -12,14 +23,14 @@ export class ChoiceModal extends Modal {
 
   onOpen() {
     const { contentEl } = this;
-    contentEl.createEl("h3", { text: "¿Qué quieres hacer?" });
+    contentEl.createEl("h3", { text: this.L("chooseAction") });
 
     const btnContainer = contentEl.createDiv({
       attr: { style: "display: flex; gap: 12px; margin-top: 16px;" },
     });
 
     const recordBtn = btnContainer.createEl("button", {
-      text: "🎙️ Grabar audio",
+      text: "🎙️ " + this.L("recordAudio"),
       cls: "mod-cta",
     });
     recordBtn.style.flex = "1";
@@ -29,7 +40,7 @@ export class ChoiceModal extends Modal {
     };
 
     const fileBtn = btnContainer.createEl("button", {
-      text: "📁 Elegir archivo",
+      text: "📁 " + this.L("chooseFile"),
     });
     fileBtn.style.flex = "1";
     fileBtn.onclick = () => {

@@ -27,7 +27,7 @@ export class GladiaTranscriber implements Transcriber {
       options
     );
 
-    return await this.pollResult(resultUrl, apiKey, signal);
+    return await this.pollResult(resultUrl, apiKey, signal, options.onProgress);
   }
 
   private async upload(
@@ -99,7 +99,8 @@ export class GladiaTranscriber implements Transcriber {
   private async pollResult(
     resultUrl: string,
     apiKey: string,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    onProgress?: (pct: number) => void
   ): Promise<Utterance[]> {
     const maxAttempts = 120;
     for (let i = 0; i < maxAttempts; i++) {
@@ -127,6 +128,8 @@ export class GladiaTranscriber implements Transcriber {
           };
         };
       };
+
+      onProgress?.(Math.round(((i + 1) / maxAttempts) * 100));
 
       if (data.status === "done") {
         const utterances = data.result?.transcription?.utterances ?? [];

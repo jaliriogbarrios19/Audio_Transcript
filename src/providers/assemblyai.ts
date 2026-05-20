@@ -67,13 +67,14 @@ export class AssemblyAITranscriber implements Transcriber {
     const { id } = (await startRes.json()) as { id: string };
 
     // 3. Poll until done
-    return await this.poll(id, apiKey, signal);
+    return await this.poll(id, apiKey, signal, options.onProgress);
   }
 
   private async poll(
     id: string,
     apiKey: string,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    onProgress?: (pct: number) => void
   ): Promise<Utterance[]> {
     const maxAttempts = 120;
     for (let i = 0; i < maxAttempts; i++) {
@@ -92,6 +93,8 @@ export class AssemblyAITranscriber implements Transcriber {
       }
 
       const data = (await res.json()) as AssemblyAIResponse;
+
+      onProgress?.(Math.round(((i + 1) / maxAttempts) * 100));
 
       if (data.status === "completed") {
         return (data.utterances ?? []).map((u) => ({

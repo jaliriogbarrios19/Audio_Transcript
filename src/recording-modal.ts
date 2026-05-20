@@ -4,6 +4,7 @@ export class RecordingModal extends Modal {
   private chunks: Blob[] = [];
   private mediaRecorder: MediaRecorder | null = null;
   private stream: MediaStream | null = null;
+  private mimeType = "";
   private seconds = 0;
   private timerInterval: ReturnType<typeof setInterval> | null = null;
   private timerEl: HTMLElement | null = null;
@@ -11,44 +12,62 @@ export class RecordingModal extends Modal {
   private resolve: ((blob: Blob | null) => void) | null = null;
 
   async start(): Promise<Blob | null> {
-    return new Promise(async (resolve) => {
+    // Step 1 – getUserMedia MUST run in the user-gesture call chain.
+    // Avoid the "async Promise executor" anti-pattern; it breaks the gesture
+    // token on iOS Safari and some desktop browsers.
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      new Notice("No se pudo acceder al micrófono. Verifica los permisos.");
+      return null;
+    }
+
+    // Step 2 – pick the best MIME type the browser actually supports
+    this.mimeType = this.detectMimeType();
+
+    // Step 3 – wrap the MediaRecorder constructor so a bad mimeType doesn't
+    //          hang the promise silently
+    let mediaRecorder: MediaRecorder;
+    try {
+      mediaRecorder = new MediaRecorder(this.stream, {
+        mimeType: this.mimeType,
+      });
+    } catch (err) {
+      this.cleanup();
+      new Notice(
+        `No se pudo iniciar la grabación. El formato ${this.mimeType} no es compatible con este navegador.`
+      );
+      console.error("[Audio Transcript] MediaRecorder constructor error:", err);
+      return null;
+    }
+
+    this.mediaRecorder = mediaRecorder;
+    this.chunks = [];
+
+    // Step 4 – wrap the rest in a Promise so the caller can await the result
+    return new Promise((resolve) => {
       this.resolve = resolve;
 
-      try {
-        this.stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-      } catch {
-        new Notice("No se pudo acceder al micrófono. Verifica los permisos.");
-        resolve(null);
-        return;
-      }
-
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-        ? "audio/webm;codecs=opus"
-        : MediaRecorder.isTypeSupported("audio/webm")
-        ? "audio/webm"
-        : MediaRecorder.isTypeSupported("audio/mp4")
-        ? "audio/mp4"
-        : MediaRecorder.isTypeSupported("audio/aac")
-        ? "audio/aac"
-        : "audio/ogg;codecs=opus";
-
-      this.mediaRecorder = new MediaRecorder(this.stream, { mimeType });
-      this.chunks = [];
-
-      this.mediaRecorder.ondataavailable = (e) => {
+      this.mediaRecorder!.ondataavailable = (e) => {
         if (e.data.size > 0) this.chunks.push(e.data);
       };
 
-      this.mediaRecorder.onstop = () => {
+      this.mediaRecorder!.onstop = () => {
         this.cleanup();
-        const blob = new Blob(this.chunks, { type: mimeType });
+        const blob = new Blob(this.chunks, { type: this.mimeType });
         this.resolve?.(blob);
         this.close();
       };
 
-      this.mediaRecorder.start(1000);
+      // Handle runtime errors so the promise never hangs
+      this.mediaRecorder!.onerror = () => {
+        this.cleanup();
+        new Notice("Error durante la grabación.");
+        this.resolve?.(null);
+        this.close();
+      };
+
+      this.mediaRecorder!.start(1000);
       super.open();
       this.startTimer();
     });
@@ -101,7 +120,23 @@ export class RecordingModal extends Modal {
     this.mediaRecorder = null;
   }
 
+  private detectMimeType(): string {
+    if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus"))
+      return "audio/webm;codecs=opus";
+    if (MediaRecorder.isTypeSupported("audio/webm")) return "audio/webm";
+    if (MediaRecorder.isTypeSupported("audio/mp4")) return "audio/mp4";
+    if (MediaRecorder.isTypeSupported("audio/aac")) return "audio/aac";
+    return "audio/ogg;codecs=opus";
+  }
+
   onClose() {
+    // If the user dismisses the modal while recording, stop the recorder.
+    // The onstop handler will complete the flow (cleanup + resolve).
+    if (this.mediaRecorder && this.mediaRecorder.state === "recording") {
+      this.mediaRecorder.stop();
+      return;
+    }
+
     this.cleanup();
     this.contentEl.empty();
     if (this.resolve) {

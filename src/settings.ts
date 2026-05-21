@@ -21,8 +21,7 @@ export interface PluginSettings {
   locale: "es" | "en";
 }
 
-export const DEFAULT_TEMPLATE =
-  "**{speaker}** `{time}`\n{text}";
+export const DEFAULT_TEMPLATE = "**{speaker}** {time}\n{text}";
 
 export const DEFAULT_SETTINGS: PluginSettings = {
   provider: "gladia",

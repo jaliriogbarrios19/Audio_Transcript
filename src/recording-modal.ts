@@ -30,7 +30,15 @@ export class RecordingModal extends Modal {
 
   async start(): Promise<Blob | null> {
     try {
-      this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          sampleRate: { ideal: 44100 },
+          channelCount: 1,
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+      });
     } catch {
       new Notice(this.L("micAccessFailed"));
       return null;
@@ -215,10 +223,10 @@ export class RecordingModal extends Modal {
   }
 
   private detectMimeType(): string {
-    if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus"))
-      return "audio/webm;codecs=opus";
     if (MediaRecorder.isTypeSupported("audio/webm")) return "audio/webm";
     if (MediaRecorder.isTypeSupported("audio/mp4")) return "audio/mp4";
+    if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus"))
+      return "audio/webm;codecs=opus";
     if (MediaRecorder.isTypeSupported("audio/aac")) return "audio/aac";
     return "audio/ogg;codecs=opus";
   }

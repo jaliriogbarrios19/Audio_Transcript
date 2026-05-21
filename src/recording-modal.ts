@@ -1,15 +1,16 @@
-import { Modal, Notice, Setting } from "obsidian";
+import { Modal, Notice } from "obsidian";
 import { t, type LocaleStrings } from "./locales";
+import { encodeWAV } from "./wav-encoder";
+import type { RecordingSampleRate } from "./types";
 
 export class RecordingModal extends Modal {
-  private chunks: Blob[] = [];
-  private mediaRecorder: MediaRecorder | null = null;
   private stream: MediaStream | null = null;
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
+  private processor: ScriptProcessorNode | null = null;
+  private pcmChunks: Float32Array[] = [];
   private levelEl: HTMLElement | null = null;
   private levelInterval: ReturnType<typeof setInterval> | null = null;
-  private mimeType = "";
   private seconds = 0;
   private timerInterval: ReturnType<typeof setInterval> | null = null;
   private timerEl: HTMLElement | null = null;
@@ -18,10 +19,12 @@ export class RecordingModal extends Modal {
   private resolve: ((blob: Blob | null) => void) | null = null;
   private paused = false;
   private locale: string;
+  private sampleRate: RecordingSampleRate;
 
-  constructor(app: import("obsidian").App, locale = "es") {
+  constructor(app: import("obsidian").App, locale = "es", sampleRate: RecordingSampleRate = 8000) {
     super(app);
     this.locale = locale;
+    this.sampleRate = sampleRate;
   }
 
   private L(key: keyof LocaleStrings): string {
@@ -32,7 +35,7 @@ export class RecordingModal extends Modal {
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          sampleRate: { ideal: 44100 },
+          sampleRate: { ideal: this.sampleRate },
           channelCount: 1,
           echoCancellation: false,
           noiseSuppression: false,
@@ -44,47 +47,34 @@ export class RecordingModal extends Modal {
       return null;
     }
 
-    this.mimeType = this.detectMimeType();
-
-    let mediaRecorder: MediaRecorder;
     try {
-      mediaRecorder = new MediaRecorder(this.stream, {
-        mimeType: this.mimeType,
-      });
-    } catch (err) {
+      this.audioContext = new AudioContext({ sampleRate: this.sampleRate });
+    } catch {
       this.cleanup();
       new Notice(this.L("recorderUnsupported"));
-      console.error("[Audio Transcript] MediaRecorder constructor error:", err);
       return null;
     }
 
-    this.mediaRecorder = mediaRecorder;
-    this.chunks = [];
+    const source = this.audioContext.createMediaStreamSource(this.stream);
+
+    this.analyser = this.audioContext.createAnalyser();
+    this.analyser.fftSize = 256;
+    source.connect(this.analyser);
+
+    this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
+    this.pcmChunks = [];
+
+    this.processor.onaudioprocess = (e) => {
+      if (this.paused || !this.processor) return;
+      const input = e.inputBuffer.getChannelData(0);
+      this.pcmChunks.push(new Float32Array(input));
+    };
+
+    source.connect(this.processor);
+    this.processor.connect(this.audioContext.destination);
 
     return new Promise((resolve) => {
       this.resolve = resolve;
-
-      this.mediaRecorder!.ondataavailable = (e) => {
-        if (e.data.size > 0) this.chunks.push(e.data);
-      };
-
-      this.mediaRecorder!.onstop = () => {
-        this.stopAudioLevel();
-        this.cleanup();
-        const blob = new Blob(this.chunks, { type: this.mimeType });
-        this.resolve?.(blob);
-        this.close();
-      };
-
-      this.mediaRecorder!.onerror = () => {
-        this.stopAudioLevel();
-        this.cleanup();
-        new Notice(this.L("recordingError"));
-        this.resolve?.(null);
-        this.close();
-      };
-
-      this.mediaRecorder!.start(1000);
       super.open();
       this.startTimer();
       this.startAudioLevel();
@@ -96,7 +86,6 @@ export class RecordingModal extends Modal {
     contentEl.empty();
     contentEl.createEl("h3", { text: this.L("recording") + "..." });
 
-    // Audio level bar
     this.levelEl = contentEl.createDiv({
       attr: {
         style:
@@ -140,10 +129,14 @@ export class RecordingModal extends Modal {
   }
 
   private togglePause() {
-    if (!this.mediaRecorder) return;
+    if (!this.processor) return;
 
     if (this.paused) {
-      this.mediaRecorder.resume();
+      this.processor.onaudioprocess = (e) => {
+        if (this.paused || !this.processor) return;
+        const input = e.inputBuffer.getChannelData(0);
+        this.pcmChunks.push(new Float32Array(input));
+      };
       this.paused = false;
       if (this.pauseBtn)
         this.pauseBtn.textContent = "⏸ " + this.L("pause");
@@ -151,7 +144,7 @@ export class RecordingModal extends Modal {
         this.statusEl.textContent = "● " + this.L("recording");
       this.timerInterval ?? this.startTimer();
     } else {
-      this.mediaRecorder.pause();
+      this.processor.onaudioprocess = null;
       this.paused = true;
       if (this.pauseBtn)
         this.pauseBtn.textContent = "▶ " + this.L("resume");
@@ -178,40 +171,37 @@ export class RecordingModal extends Modal {
   }
 
   private startAudioLevel() {
-    if (!this.stream || !this.levelEl) return;
+    if (!this.analyser || !this.levelEl) return;
 
-    try {
-      this.audioContext = new AudioContext();
-      const source = this.audioContext.createMediaStreamSource(this.stream);
-      this.analyser = this.audioContext.createAnalyser();
-      this.analyser.fftSize = 256;
-      source.connect(this.analyser);
+    const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+    const fillEl = this.levelEl.firstElementChild as HTMLElement | null;
 
-      const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-      const fillEl = this.levelEl.firstElementChild as HTMLElement | null;
-
-      this.levelInterval = setInterval(() => {
-        if (!this.analyser || !fillEl) return;
-        this.analyser.getByteFrequencyData(dataArray);
-        const avg =
-          dataArray.reduce((sum, v) => sum + v, 0) / dataArray.length;
-        const pct = Math.min(100, Math.round((avg / 128) * 100));
-        fillEl.style.width = `${pct}%`;
-      }, 80);
-    } catch {
-      // AnalyserNode not supported — silent fail, recording still works
-    }
+    this.levelInterval = setInterval(() => {
+      if (!this.analyser || !fillEl) return;
+      this.analyser.getByteFrequencyData(dataArray);
+      const avg =
+        dataArray.reduce((sum, v) => sum + v, 0) / dataArray.length;
+      const pct = Math.min(100, Math.round((avg / 128) * 100));
+      fillEl.style.width = `${pct}%`;
+    }, 80);
   }
 
   private stopAudioLevel() {
     if (this.levelInterval) clearInterval(this.levelInterval);
-    this.audioContext?.close();
-    this.audioContext = null;
-    this.analyser = null;
   }
 
   private stopRecording() {
-    this.mediaRecorder?.stop();
+    this.stopAudioLevel();
+    this.processor?.disconnect();
+    this.processor = null;
+
+    const blob = this.pcmChunks.length > 0
+      ? encodeWAV(this.pcmChunks, this.sampleRate)
+      : new Blob([], { type: "audio/wav" });
+
+    this.cleanup();
+    this.resolve?.(blob);
+    this.close();
   }
 
   private cleanup() {
@@ -219,21 +209,16 @@ export class RecordingModal extends Modal {
     this.stopAudioLevel();
     this.stream?.getTracks().forEach((t) => t.stop());
     this.stream = null;
-    this.mediaRecorder = null;
-  }
-
-  private detectMimeType(): string {
-    if (MediaRecorder.isTypeSupported("audio/webm")) return "audio/webm";
-    if (MediaRecorder.isTypeSupported("audio/mp4")) return "audio/mp4";
-    if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus"))
-      return "audio/webm;codecs=opus";
-    if (MediaRecorder.isTypeSupported("audio/aac")) return "audio/aac";
-    return "audio/ogg;codecs=opus";
+    this.audioContext?.close();
+    this.audioContext = null;
+    this.analyser = null;
+    this.processor = null;
+    this.pcmChunks = [];
   }
 
   onClose() {
-    if (this.mediaRecorder && this.mediaRecorder.state === "recording") {
-      this.mediaRecorder.stop();
+    if (this.processor) {
+      this.stopRecording();
       return;
     }
 

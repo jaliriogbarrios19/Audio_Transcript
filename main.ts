@@ -111,7 +111,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
       return;
     }
 
-    const blob = await new RecordingModal(this.app, this.settings.locale).start();
+    const blob = await new RecordingModal(this.app, this.settings.locale, this.settings.recordingSampleRate).start();
     if (!blob) return;
 
     await this.transcribeBlob(editor, blob);
@@ -281,7 +281,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
 
       // Save audio first so timestamps can link to it
       let audioPath: string | undefined;
-      if (blob.size > 0) {
+      if (this.settings.saveAudioAfterTranscription && blob.size > 0) {
         audioPath = await this.saveAudioFile(blob);
       }
 

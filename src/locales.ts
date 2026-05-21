@@ -43,6 +43,12 @@ export interface LocaleStrings {
   apiKeyPlaceholder: string;
   whisperLocalUrlLabel: string;
   whisperLocalUrlDesc: string;
+  recordingQualityLabel: string;
+  recordingQualityDesc: string;
+  sampleRate8kHz: string;
+  sampleRate16kHz: string;
+  saveAudioLabel: string;
+  saveAudioDesc: string;
 }
 
 const es: LocaleStrings = {
@@ -96,6 +102,14 @@ const es: LocaleStrings = {
   whisperLocalUrlLabel: "URL del servidor",
   whisperLocalUrlDesc:
     "URL del servidor whisper.cpp (ej: http://localhost:8080)",
+  recordingQualityLabel: "Calidad de grabación",
+  recordingQualityDesc:
+    "8 kHz: archivos chicos (~960 KB/min). 16 kHz: máxima calidad (~1.9 MB/min).",
+  sampleRate8kHz: "8 kHz (recomendado, archivos chicos)",
+  sampleRate16kHz: "16 kHz (máxima calidad)",
+  saveAudioLabel: "Guardar audio después de transcribir",
+  saveAudioDesc:
+    "Desmarcalo para audios largos. El audio se descarta después de la transcripción.",
 };
 
 const en: LocaleStrings = {
@@ -148,6 +162,14 @@ const en: LocaleStrings = {
   apiKeyPlaceholder: "Enter your API key",
   whisperLocalUrlLabel: "Server URL",
   whisperLocalUrlDesc: "whisper.cpp server URL (e.g. http://localhost:8080)",
+  recordingQualityLabel: "Recording quality",
+  recordingQualityDesc:
+    "8 kHz: small files (~960 KB/min). 16 kHz: max quality (~1.9 MB/min).",
+  sampleRate8kHz: "8 kHz (recommended, small files)",
+  sampleRate16kHz: "16 kHz (max quality)",
+  saveAudioLabel: "Save audio after transcription",
+  saveAudioDesc:
+    "Uncheck for long recordings. Audio is discarded after transcription.",
 };
 
 export const LOCALES: Record<string, LocaleStrings> = { es, en };

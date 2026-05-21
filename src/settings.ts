@@ -1,6 +1,6 @@
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type DiaryTranscriberPlugin from "../main";
-import { TranscriptionProvider, PROVIDERS, DIARIZATION_WARNING } from "./types";
+import { TranscriptionProvider, RecordingSampleRate, PROVIDERS, DIARIZATION_WARNING } from "./types";
 import { PROVIDER_REGISTRY } from "./providers/registry";
 import { t, type LocaleStrings } from "./locales";
 
@@ -18,6 +18,8 @@ export interface PluginSettings {
   insertAsCallout: boolean;
   outputTemplate: string;
   audioFolder: string;
+  recordingSampleRate: RecordingSampleRate;
+  saveAudioAfterTranscription: boolean;
   locale: "es" | "en";
 }
 
@@ -37,6 +39,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   insertAsCallout: true,
   outputTemplate: DEFAULT_TEMPLATE,
   audioFolder: "",
+  recordingSampleRate: 8000,
+  saveAudioAfterTranscription: true,
   locale: "es",
 };
 
@@ -249,6 +253,34 @@ export class SettingsTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           });
       });
+
+    // ── Recording quality ──────────────────────────────────
+    new Setting(containerEl)
+      .setName(L("recordingQualityLabel"))
+      .setDesc(L("recordingQualityDesc"))
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("8000", L("sampleRate8kHz"))
+          .addOption("16000", L("sampleRate16kHz"))
+          .setValue(String(this.plugin.settings.recordingSampleRate))
+          .onChange(async (v: string) => {
+            this.plugin.settings.recordingSampleRate = Number(v) as RecordingSampleRate;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    // ── Save audio toggle ──────────────────────────────────
+    new Setting(containerEl)
+      .setName(L("saveAudioLabel"))
+      .setDesc(L("saveAudioDesc"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.saveAudioAfterTranscription)
+          .onChange(async (value) => {
+            this.plugin.settings.saveAudioAfterTranscription = value;
+            await this.plugin.saveSettings();
+          })
+      );
 
     // ── All API keys ───────────────────────────────────────
     containerEl.createEl("h3", { text: "Todas las API Keys" });

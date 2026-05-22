@@ -39,7 +39,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   insertAsCallout: true,
   outputTemplate: DEFAULT_TEMPLATE,
   audioFolder: "",
-  recordingSampleRate: 8000,
+  recordingSampleRate: 16000,
   saveAudioAfterTranscription: true,
   locale: "es",
 };
@@ -260,8 +260,9 @@ export class SettingsTab extends PluginSettingTab {
       .setDesc(L("recordingQualityDesc"))
       .addDropdown((dropdown) =>
         dropdown
-          .addOption("8000", L("sampleRate8kHz"))
           .addOption("16000", L("sampleRate16kHz"))
+          .addOption("22050", L("sampleRate22kHz"))
+          .addOption("44100", L("sampleRate44kHz"))
           .setValue(String(this.plugin.settings.recordingSampleRate))
           .onChange(async (v: string) => {
             this.plugin.settings.recordingSampleRate = Number(v) as RecordingSampleRate;

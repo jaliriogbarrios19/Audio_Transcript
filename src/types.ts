@@ -20,7 +20,7 @@ export interface SpeakerMapping {
   names: string[];
 }
 
-export type RecordingSampleRate = 8000 | 16000;
+export type RecordingSampleRate = 16000 | 22050 | 44100;
 
 export type TranscriptionProvider =
   | "gladia"

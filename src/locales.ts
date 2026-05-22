@@ -45,8 +45,9 @@ export interface LocaleStrings {
   whisperLocalUrlDesc: string;
   recordingQualityLabel: string;
   recordingQualityDesc: string;
-  sampleRate8kHz: string;
   sampleRate16kHz: string;
+  sampleRate22kHz: string;
+  sampleRate44kHz: string;
   saveAudioLabel: string;
   saveAudioDesc: string;
 }
@@ -104,9 +105,10 @@ const es: LocaleStrings = {
     "URL del servidor whisper.cpp (ej: http://localhost:8080)",
   recordingQualityLabel: "Calidad de grabación",
   recordingQualityDesc:
-    "8 kHz: archivos chicos (~960 KB/min). 16 kHz: máxima calidad (~1.9 MB/min).",
-  sampleRate8kHz: "8 kHz (recomendado, archivos chicos)",
-  sampleRate16kHz: "16 kHz (máxima calidad)",
+    "Define la frecuencia de muestreo del audio. 16 kHz es el mínimo para diarización de hablantes.",
+  sampleRate16kHz: "16 kHz (recomendado, buena diarización, ~1.9 MB/min)",
+  sampleRate22kHz: "22.05 kHz (mejor calidad, ~2.6 MB/min)",
+  sampleRate44kHz: "44.1 kHz (máxima calidad, ~5.3 MB/min)",
   saveAudioLabel: "Guardar audio después de transcribir",
   saveAudioDesc:
     "Desmarcalo para audios largos. El audio se descarta después de la transcripción.",
@@ -164,9 +166,10 @@ const en: LocaleStrings = {
   whisperLocalUrlDesc: "whisper.cpp server URL (e.g. http://localhost:8080)",
   recordingQualityLabel: "Recording quality",
   recordingQualityDesc:
-    "8 kHz: small files (~960 KB/min). 16 kHz: max quality (~1.9 MB/min).",
-  sampleRate8kHz: "8 kHz (recommended, small files)",
-  sampleRate16kHz: "16 kHz (max quality)",
+    "Sets the audio sample rate. 16 kHz is the minimum for speaker diarization.",
+  sampleRate16kHz: "16 kHz (recommended, good diarization, ~1.9 MB/min)",
+  sampleRate22kHz: "22.05 kHz (better quality, ~2.6 MB/min)",
+  sampleRate44kHz: "44.1 kHz (max quality, ~5.3 MB/min)",
   saveAudioLabel: "Save audio after transcription",
   saveAudioDesc:
     "Uncheck for long recordings. Audio is discarded after transcription.",

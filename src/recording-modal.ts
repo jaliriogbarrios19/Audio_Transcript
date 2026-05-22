@@ -21,7 +21,7 @@ export class RecordingModal extends Modal {
   private locale: string;
   private sampleRate: RecordingSampleRate;
 
-  constructor(app: import("obsidian").App, locale = "es", sampleRate: RecordingSampleRate = 8000) {
+  constructor(app: import("obsidian").App, locale = "es", sampleRate: RecordingSampleRate = 16000) {
     super(app);
     this.locale = locale;
     this.sampleRate = sampleRate;
@@ -195,9 +195,15 @@ export class RecordingModal extends Modal {
     this.processor?.disconnect();
     this.processor = null;
 
-    const blob = this.pcmChunks.length > 0
-      ? encodeWAV(this.pcmChunks, this.sampleRate)
-      : new Blob([], { type: "audio/wav" });
+    let blob: Blob;
+    if (this.pcmChunks.length > 0) {
+      const nativeRate = this.audioContext?.sampleRate ?? this.sampleRate;
+      const concatenated = concatenateChunks(this.pcmChunks);
+      const resampled = resampleTo(concatenated, nativeRate, this.sampleRate);
+      blob = encodeWAV([resampled], this.sampleRate);
+    } else {
+      blob = new Blob([], { type: "audio/wav" });
+    }
 
     this.cleanup();
     this.resolve?.(blob);
@@ -229,4 +235,37 @@ export class RecordingModal extends Modal {
       this.resolve = null;
     }
   }
+}
+
+function concatenateChunks(chunks: Float32Array[]): Float32Array {
+  const totalLength = chunks.reduce((sum, c) => sum + c.length, 0);
+  const result = new Float32Array(totalLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
+}
+
+function resampleTo(
+  samples: Float32Array,
+  fromRate: number,
+  toRate: number
+): Float32Array {
+  if (fromRate === toRate) return samples;
+
+  const ratio = fromRate / toRate;
+  const newLength = Math.floor(samples.length / ratio);
+  const result = new Float32Array(newLength);
+
+  for (let i = 0; i < newLength; i++) {
+    const srcIndex = i * ratio;
+    const floor = Math.floor(srcIndex);
+    const ceil = Math.min(floor + 1, samples.length - 1);
+    const t = srcIndex - floor;
+    result[i] = samples[floor] * (1 - t) + samples[ceil] * t;
+  }
+
+  return result;
 }

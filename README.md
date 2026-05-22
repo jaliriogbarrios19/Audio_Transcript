@@ -1,55 +1,49 @@
 # Audio Transcript
 
-Graba o transcribe audios directamente desde Obsidian con identificación de hablantes. Usa Gladia, Deepgram o AssemblyAI como motor de transcripción.
+Record or transcribe audio files directly in Obsidian with speaker diarization — know who said what. Supports Gladia, Deepgram, AssemblyAI, OpenAI Whisper, Groq, and local Whisper.
 
-## Instalación
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-blue?logo=paypal)](https://paypal.me/jesusgarciapsi)
 
-### Opción A — BRAT (recomendada)
+## Quick start
 
-1. Instala [BRAT](https://github.com/TfTHacker/obsidian42-brat) desde Community Plugins
-2. En BRAT, agrega este repositorio: `jaliriogbarrios19/Audio_Transcript`
-3. Activa el plugin en Settings → Community Plugins
+1. Install from **Community Plugins** → search "Audio Transcript"
+2. Enable it in Settings → Community Plugins
+3. Open Settings → Audio Transcript, pick a provider, paste your API key
+4. Open a note, click the 🎙️ ribbon icon, and record or pick a file
 
-### Opción B — Manual
+The plugin auto-detects your Obsidian language. No manual language setting needed.
 
-1. Descarga la [última release](https://github.com/jaliriogbarrios19/Audio_Transcript/releases)
-2. Extrae en `.obsidian/plugins/audio-transcript/`
-3. Activa el plugin en Settings → Community Plugins
+## Providers
 
-## Configuración
+| Provider | Diarization | Free tier | Get API key |
+|----------|-------------|-----------|-------------|
+| Gladia | Yes | Free credits | [app.gladia.io](https://app.gladia.io) |
+| Deepgram | Yes | $200 credits | [console.deepgram.com](https://console.deepgram.com) |
+| AssemblyAI | Yes | Free hours | [assemblyai.com](https://assemblyai.com) |
+| OpenAI Whisper | No | Pay-as-you-go | [platform.openai.com](https://platform.openai.com) |
+| Groq (Whisper) | No | Free tier | [console.groq.com](https://console.groq.com) |
+| Whisper (local) | No | Self-hosted | [whisper.cpp](https://github.com/ggerganov/whisper.cpp) |
 
-1. Ve a Settings → Audio Transcript
-2. Elige un proveedor (Gladia, Deepgram o AssemblyAI)
-3. Pega tu API key
-4. El idioma por defecto es español — puedes cambiarlo si quieres
+> Providers without diarization produce a single text block. Use Gladia, Deepgram, or AssemblyAI for speaker separation.
 
-### ¿Dónde consigo una API key?
+## Features
 
-| Proveedor | Registro | Precios |
-|-----------|----------|---------|
-| [Gladia](https://app.gladia.io) | Créditos gratis al registrarte | [Ver precios](https://www.gladia.io/pricing) |
-| [Deepgram](https://console.deepgram.com) | $200 en créditos gratis | [Ver precios](https://deepgram.com/pricing) |
-| [AssemblyAI](https://assemblyai.com) | Horas gratis al registrarte | [Ver precios](https://www.assemblyai.com/pricing) |
+- **Record or upload** — record from your mic or pick audio files (MP3, WAV, WebM, etc.)
+- **Speaker diarization** — automatically labels who spoke when (Gladia, Deepgram, AssemblyAI)
+- **Batch transcription** — queue multiple files at once
+- **Configurable output** — custom templates with `{speaker}`, `{time}`, `{text}` placeholders
+- **Timestamps with audio links** — click a timestamp to jump to that moment in the saved audio
+- **Callout wrapping** — output inside a foldable `> [!transcription]` block
+- **Auto language detection** — matches your Obsidian UI language (Spanish or English)
 
-## Cómo se usa
+## How it works
 
-1. Abre una nota en Obsidian
-2. Haz clic en el ícono 🎙️ de la barra lateral
-3. Elige **Grabar audio** o **Elegir archivo**
-4. Si grabas: habla y después haz clic en **Detener**
-5. Pon cuántas personas hablan y sus nombres
-6. Haz clic en **Iniciar transcripción**
-7. La transcripción aparece en tu nota con timestamps
+1. Audio is sent to your chosen provider's API
+2. The provider transcribes and detects speakers
+3. Speaker labels are replaced with the names you provide
+4. The transcription is inserted into your active note
 
-También puedes usar `Ctrl+P` y buscar **Grabar y transcribir** o **Transcribir archivo**.
-
-## ¿Cómo funciona?
-
-1. El audio se graba o se selecciona desde tu computadora
-2. Se envía al proveedor que elegiste (Gladia, Deepgram o AssemblyAI)
-3. El proveedor transcribe el audio y detecta quién habló cada parte
-4. El plugin reemplaza "Speaker 1", "Speaker 2" con los nombres que pusiste
-5. La transcripción se inserta en tu nota con el formato:
+Example output:
 
 ```
 **Jesús** `0:05`
@@ -59,8 +53,12 @@ Buen día, ¿cómo estás?
 Muy bien, gracias.
 ```
 
-Si grabaste, el audio se guarda automáticamente en la misma carpeta de tu nota.
+## Support
 
-## Créditos
+Audio Transcript is free and open source. If it saves you hours of manual transcription, consider buying me a coffee:
 
-Plugin creado por **Jesús García** & **DeepSeek V4-Pro**.
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-blue?logo=paypal)](https://paypal.me/jesusgarciapsi)
+
+## Credits
+
+Created by **Jesús García** & **DeepSeek V4-Pro** · [GitHub](https://github.com/jaliriogbarrios19/Audio_Transcript)

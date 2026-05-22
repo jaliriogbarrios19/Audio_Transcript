@@ -278,6 +278,22 @@ export class SettingsTab extends PluginSettingTab {
     this.addApiKeyField(containerEl, "OpenAI Whisper", "whisperApiKey");
     this.addApiKeyField(containerEl, "Groq", "groqApiKey");
     this.addWhisperLocalUrlField(containerEl, true);
+
+    // ── Support ───────────────────────────────────────────
+    const support = containerEl.createDiv({
+      attr: {
+        style:
+          "margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--background-modifier-border); text-align: center;",
+      },
+    });
+    support.createEl("a", {
+      text: "☕ Support this plugin",
+      href: "https://paypal.me/jesusgarciapsi",
+    });
+    support.createEl("span", {
+      text: " · Free and open source",
+      cls: "setting-item-description",
+    });
   }
 
   // ── Helpers ────────────────────────────────────────────

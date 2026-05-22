@@ -20,7 +20,6 @@ export interface PluginSettings {
   audioFolder: string;
   recordingSampleRate: RecordingSampleRate;
   saveAudioAfterTranscription: boolean;
-  locale: "es" | "en";
 }
 
 export const DEFAULT_TEMPLATE = "**{speaker}** {time}\n{text}";
@@ -41,7 +40,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   audioFolder: "",
   recordingSampleRate: 16000,
   saveAudioAfterTranscription: true,
-  locale: "es",
 };
 
 export class SettingsTab extends PluginSettingTab {
@@ -55,25 +53,9 @@ export class SettingsTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    const L = (k: keyof LocaleStrings) => t(k, this.plugin.settings.locale);
+    const L = (k: keyof LocaleStrings) => t(k, this.plugin.getLocale());
 
     containerEl.createEl("h2", { text: "Audio Transcript" });
-
-    // ── Plugin language ──────────────────────────────────
-    new Setting(containerEl)
-      .setName("Idioma del plugin")
-      .setDesc("Español o English")
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("es", "Español")
-          .addOption("en", "English")
-          .setValue(this.plugin.settings.locale)
-          .onChange(async (v: string) => {
-            this.plugin.settings.locale = v as "es" | "en";
-            await this.plugin.saveSettings();
-            this.display();
-          })
-      );
 
     // ── Provider selector ─────────────────────────────────
     new Setting(containerEl)

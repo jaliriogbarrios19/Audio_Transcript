@@ -4,6 +4,7 @@ import {
   MarkdownView,
   Notice,
   Plugin,
+  moment,
 } from "obsidian";
 import {
   PluginSettings,
@@ -28,7 +29,11 @@ export default class DiaryTranscriberPlugin extends Plugin {
   private abortController: AbortController | null = null;
 
   private L(key: keyof LocaleStrings): string {
-    return t(key, this.settings.locale);
+    return t(key, this.getLocale());
+  }
+
+  getLocale(): "es" | "en" {
+    return moment.locale().startsWith("es") ? "es" : "en";
   }
 
   async onload() {
@@ -41,7 +46,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
         new Notice(this.L("openNoteFirst"));
         return;
       }
-      const choice = await new ChoiceModal(this.app, this.settings.locale).open();
+      const choice = await new ChoiceModal(this.app, this.getLocale()).open();
       if (choice === "record") {
         this.startRecording(view.editor);
       } else if (choice === "file") {
@@ -111,7 +116,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
       return;
     }
 
-    const blob = await new RecordingModal(this.app, this.settings.locale, this.settings.recordingSampleRate).start();
+    const blob = await new RecordingModal(this.app, this.getLocale(), this.settings.recordingSampleRate).start();
     if (!blob) return;
 
     await this.transcribeBlob(editor, blob);
@@ -151,7 +156,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
     if (this.providerMeta.supportsDiarization) {
       const mapping = await new SpeakerModal(
         this.app,
-        this.settings.locale
+        this.getLocale()
       ).open();
       if (!mapping) return;
       speakerMapping = mapping;
@@ -226,7 +231,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
     } else if (meta.supportsDiarization) {
       const mapping = await new SpeakerModal(
         this.app,
-        this.settings.locale
+        this.getLocale()
       ).open();
       if (!mapping) return;
       resolvedMapping = mapping;

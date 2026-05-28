@@ -13,6 +13,8 @@ export interface PluginSettings {
   whisperApiKey: string;
   groqApiKey: string;
   whisperLocalUrl: string;
+  spobApiKey: string;
+  spobBaseUrl: string;
   defaultLanguage: string;
   languageDetection: "auto" | "manual";
   insertAsCallout: boolean;
@@ -34,6 +36,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   whisperApiKey: "",
   groqApiKey: "",
   whisperLocalUrl: "http://localhost:8080",
+  spobApiKey: "",
+  spobBaseUrl: "http://localhost:8080",
   defaultLanguage: "es",
   languageDetection: "manual",
   insertAsCallout: true,
@@ -99,9 +103,25 @@ export class SettingsTab extends PluginSettingTab {
       this.addWhisperLocalUrlField(containerEl);
     }
 
-    // ── Model selector (AssemblyAI only for now) ───────────
-    if (this.plugin.settings.provider === "assemblyai") {
+    // ── Model selector ──────────────────────────────
+    if (meta.modelField) {
       this.addModelField(containerEl);
+    }
+
+    // ── spob URL ───────────────────────────────────
+    if (this.plugin.settings.provider === "spob") {
+      new Setting(containerEl)
+        .setName("spob Backend URL")
+        .setDesc("URL del servidor spob (por defecto localhost:8080)")
+        .addText((text) => {
+          text
+            .setPlaceholder("http://localhost:8080")
+            .setValue(this.plugin.settings.spobBaseUrl)
+            .onChange(async (value) => {
+              this.plugin.settings.spobBaseUrl = value;
+              await this.plugin.saveSettings();
+            });
+        });
     }
 
     // ── Test API Key button ────────────────────────────────
@@ -296,6 +316,7 @@ export class SettingsTab extends PluginSettingTab {
     this.addApiKeyField(containerEl, "AssemblyAI", "assemblyaiApiKey");
     this.addApiKeyField(containerEl, "OpenAI Whisper", "whisperApiKey");
     this.addApiKeyField(containerEl, "Groq", "groqApiKey");
+    this.addApiKeyField(containerEl, "Smart Plugins Obsidian", "spobApiKey");
     this.addWhisperLocalUrlField(containerEl, true);
 
     // ── Support ───────────────────────────────────────────
@@ -402,6 +423,7 @@ export class SettingsTab extends PluginSettingTab {
           headers = { Authorization: `Token ${key}` };
           break;
         case "assemblyai":
+        case "spob":
           headers = { authorization: key };
           break;
         case "whisper":

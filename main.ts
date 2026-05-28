@@ -12,7 +12,7 @@ import {
   DEFAULT_TEMPLATE,
   SettingsTab,
 } from "./src/settings";
-import { PROVIDER_REGISTRY } from "./src/providers/registry";
+import { PROVIDER_REGISTRY, setSpobBaseUrl } from "./src/providers/registry";
 import { RecordingModal } from "./src/recording-modal";
 import { SpeakerModal } from "./src/speaker-modal";
 import { ChoiceModal } from "./src/choice-modal";
@@ -89,10 +89,12 @@ export default class DiaryTranscriberPlugin extends Plugin {
 
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    setSpobBaseUrl(this.settings.spobBaseUrl || "http://localhost:8080");
   }
 
   async saveSettings() {
     await this.saveData(this.settings);
+    setSpobBaseUrl(this.settings.spobBaseUrl || "http://localhost:8080");
   }
 
   // ── Provider helpers ──────────────────────────────────────
@@ -276,7 +278,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
         language,
         signal: controller.signal,
         model:
-          this.settings.provider === "assemblyai"
+          this.settings.provider === "assemblyai" || this.settings.provider === "spob"
             ? this.settings.assemblyaiModel
             : undefined,
         onProgress: (pct: number) => {

@@ -30,7 +30,8 @@ export type TranscriptionProvider =
   | "assemblyai"
   | "whisper"
   | "groq"
-  | "whisper-local";
+  | "whisper-local"
+  | "spob";
 
 export interface ProviderMeta {
   id: TranscriptionProvider;
@@ -53,6 +54,7 @@ export const PROVIDERS: {
   { value: "whisper", label: "OpenAI Whisper" },
   { value: "groq", label: "Groq (Whisper)" },
   { value: "whisper-local", label: "Whisper (local)" },
+  { value: "spob", label: "Smart Plugins Obsidian (AssemblyAI)" },
 ];
 
 export const DIARIZATION_WARNING: Record<TranscriptionProvider, string | null> =
@@ -65,4 +67,5 @@ export const DIARIZATION_WARNING: Record<TranscriptionProvider, string | null> =
     groq: "Groq (Whisper) no tiene diarización de hablantes. La transcripción será un solo bloque de texto.",
     "whisper-local":
       "Whisper local no tiene diarización de hablantes. La transcripción será un solo bloque de texto.",
+    spob: null,
   };

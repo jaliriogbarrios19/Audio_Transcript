@@ -1,6 +1,6 @@
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type DiaryTranscriberPlugin from "../main";
-import { TranscriptionProvider, RecordingSampleRate, PROVIDERS, DIARIZATION_WARNING } from "./types";
+import { TranscriptionProvider, RecordingSampleRate, RecordingMode, PROVIDERS, DIARIZATION_WARNING } from "./types";
 import { PROVIDER_REGISTRY } from "./providers/registry";
 import { t, type LocaleStrings } from "./locales";
 
@@ -19,6 +19,7 @@ export interface PluginSettings {
   outputTemplate: string;
   audioFolder: string;
   recordingSampleRate: RecordingSampleRate;
+  recordingMode: RecordingMode;
   saveAudioAfterTranscription: boolean;
 }
 
@@ -39,6 +40,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   outputTemplate: DEFAULT_TEMPLATE,
   audioFolder: "",
   recordingSampleRate: 16000,
+  recordingMode: "desktop",
   saveAudioAfterTranscription: true,
 };
 
@@ -248,6 +250,23 @@ export class SettingsTab extends PluginSettingTab {
           .setValue(String(this.plugin.settings.recordingSampleRate))
           .onChange(async (v: string) => {
             this.plugin.settings.recordingSampleRate = Number(v) as RecordingSampleRate;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    // ── Recording mode ──────────────────────────────────
+    new Setting(containerEl)
+      .setName("Modo de grabación")
+      .setDesc(
+        "Desktop: mejor calidad, usa ScriptProcessor + WAV. Mobile: más estable en iOS/Android, usa MediaRecorder nativo."
+      )
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("desktop", "Desktop (PC/Mac)")
+          .addOption("mobile", "Mobile (iOS/Android)")
+          .setValue(this.plugin.settings.recordingMode)
+          .onChange(async (v: string) => {
+            this.plugin.settings.recordingMode = v as RecordingMode;
             await this.plugin.saveSettings();
           })
       );

@@ -1,7 +1,7 @@
 import { Modal, Notice } from "obsidian";
 import { t, type LocaleStrings } from "./locales";
 import { encodeWAV } from "./wav-encoder";
-import type { RecordingSampleRate } from "./types";
+import type { RecordingSampleRate, RecordingMode } from "./types";
 
 export class RecordingModal extends Modal {
   private stream: MediaStream | null = null;
@@ -20,11 +20,17 @@ export class RecordingModal extends Modal {
   private paused = false;
   private locale: string;
   private sampleRate: RecordingSampleRate;
+  private mode: RecordingMode;
 
-  constructor(app: import("obsidian").App, locale = "es", sampleRate: RecordingSampleRate = 16000) {
+  // ── Mobile (MediaRecorder) state ──────────────────────────
+  private mediaRecorder: MediaRecorder | null = null;
+  private mobileChunks: Blob[] = [];
+
+  constructor(app: import("obsidian").App, locale = "es", sampleRate: RecordingSampleRate = 16000, mode: RecordingMode = "desktop") {
     super(app);
     this.locale = locale;
     this.sampleRate = sampleRate;
+    this.mode = mode;
   }
 
   private L(key: keyof LocaleStrings): string {
@@ -32,6 +38,13 @@ export class RecordingModal extends Modal {
   }
 
   async start(): Promise<Blob | null> {
+    if (this.mode === "mobile") {
+      return this.startMobile();
+    }
+    return this.startDesktop();
+  }
+
+  private async startDesktop(): Promise<Blob | null> {
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -191,6 +204,14 @@ export class RecordingModal extends Modal {
   }
 
   private stopRecording() {
+    if (this.mode === "mobile") {
+      this.stopMobileRecording();
+      return;
+    }
+    this.stopDesktopRecording();
+  }
+
+  private stopDesktopRecording() {
     this.stopAudioLevel();
     this.processor?.disconnect();
     this.processor = null;
@@ -220,11 +241,17 @@ export class RecordingModal extends Modal {
     this.analyser = null;
     this.processor = null;
     this.pcmChunks = [];
+    this.mediaRecorder = null;
+    this.mobileChunks = [];
   }
 
   onClose() {
+    if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+      this.stopMobileRecording();
+      return;
+    }
     if (this.processor) {
-      this.stopRecording();
+      this.stopDesktopRecording();
       return;
     }
 
@@ -234,6 +261,90 @@ export class RecordingModal extends Modal {
       this.resolve(null);
       this.resolve = null;
     }
+  }
+
+  // ── Mobile: MediaRecorder (iOS/Android) ───────────────────
+
+  private async startMobile(): Promise<Blob | null> {
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+      });
+    } catch {
+      new Notice(this.L("micAccessFailed"));
+      return null;
+    }
+
+    const mimeType = this.bestMobileMimeType();
+    try {
+      this.mediaRecorder = new MediaRecorder(this.stream, {
+        mimeType: mimeType || undefined,
+      });
+    } catch {
+      // Fallback: no MIME type constraint
+      this.mediaRecorder = new MediaRecorder(this.stream);
+    }
+
+    this.mobileChunks = [];
+    this.mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) this.mobileChunks.push(e.data);
+    };
+
+    this.mediaRecorder.onerror = () => {
+      new Notice(this.L("transcriptionFailed"));
+      this.cleanup();
+      this.resolve?.(null);
+      this.resolve = null;
+      this.close();
+    };
+
+    // Collect data every second for responsive stop
+    this.mediaRecorder.start(1000);
+
+    return new Promise((resolve) => {
+      this.resolve = resolve;
+      super.open();
+      this.startTimer();
+      this.startAudioLevel();
+    });
+  }
+
+  private stopMobileRecording() {
+    this.stopAudioLevel();
+    if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+      this.mediaRecorder.onstop = () => {
+        const mimeType = this.mediaRecorder?.mimeType || "audio/webm";
+        const blob = new Blob(this.mobileChunks, { type: mimeType });
+        this.cleanup();
+        this.resolve?.(blob);
+        this.close();
+      };
+      this.mediaRecorder.stop();
+    } else {
+      const mimeType = this.mediaRecorder?.mimeType || "audio/webm";
+      const blob = new Blob(this.mobileChunks, { type: mimeType });
+      this.cleanup();
+      this.resolve?.(blob);
+      this.close();
+    }
+  }
+
+  private bestMobileMimeType(): string | null {
+    const types = [
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/mp4",
+      "audio/ogg;codecs=opus",
+    ];
+    for (const t of types) {
+      if (MediaRecorder.isTypeSupported(t)) return t;
+    }
+    return null;
   }
 }
 

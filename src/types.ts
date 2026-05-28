@@ -22,6 +22,8 @@ export interface SpeakerMapping {
 
 export type RecordingSampleRate = 16000 | 22050 | 44100;
 
+export type RecordingMode = "desktop" | "mobile";
+
 export type TranscriptionProvider =
   | "gladia"
   | "deepgram"

@@ -116,7 +116,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
       return;
     }
 
-    const blob = await new RecordingModal(this.app, this.getLocale(), this.settings.recordingSampleRate).start();
+    const blob = await new RecordingModal(this.app, this.getLocale(), this.settings.recordingSampleRate, this.settings.recordingMode).start();
     if (!blob) return;
 
     await this.transcribeBlob(editor, blob);

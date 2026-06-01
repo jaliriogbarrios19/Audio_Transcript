@@ -28,7 +28,7 @@ export interface PluginSettings {
 export const DEFAULT_TEMPLATE = "**{speaker}** {time}\n{text}";
 
 export const DEFAULT_SETTINGS: PluginSettings = {
-  provider: "gladia",
+  provider: "spob",
   gladiaApiKey: "",
   deepgramApiKey: "",
   assemblyaiApiKey: "",
@@ -37,7 +37,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   groqApiKey: "",
   whisperLocalUrl: "http://localhost:8080",
   spobApiKey: "",
-  spobBaseUrl: "http://localhost:8080",
+  spobBaseUrl: "https://spob-backend.fly.dev",
   defaultLanguage: "es",
   languageDetection: "manual",
   insertAsCallout: true,

@@ -134,7 +134,7 @@ export class GladiaTranscriber implements Transcriber {
       if (data.status === "done") {
         const utterances = data.result?.transcription?.utterances ?? [];
         return utterances.map((u) => ({
-          speaker: u.speaker,
+          speaker: u.speaker + 1,
           text: u.text.trim(),
           start: u.start,
           end: u.end,

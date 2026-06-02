@@ -18,6 +18,7 @@ import { ChoiceModal } from "./src/choice-modal";
 import { pickAudioFile, pickMultipleAudioFiles } from "./src/file-picker";
 import { runTranscription } from "./src/transcription-runner";
 import { SpeakerMapping } from "./src/types";
+import { DashboardView, VIEW_TYPE_DASHBOARD } from "./src/premium/dashboard-view";
 import { t, type LocaleStrings } from "./src/locales";
 
 export default class DiaryTranscriberPlugin extends Plugin {
@@ -76,6 +77,21 @@ export default class DiaryTranscriberPlugin extends Plugin {
         editor: Editor,
         _ctx: MarkdownView | MarkdownFileInfo
       ) => this.transcribeBatch(editor),
+    });
+
+    this.registerView(
+      VIEW_TYPE_DASHBOARD,
+      (leaf) => new DashboardView(leaf, this)
+    );
+
+    this.addRibbonIcon("layout-dashboard", "Dashboard de transcripciones", () => {
+      this.activateDashboard();
+    });
+
+    this.addCommand({
+      id: "open-dashboard",
+      name: "Abrir dashboard de transcripciones",
+      callback: () => this.activateDashboard(),
     });
   }
 
@@ -196,6 +212,19 @@ export default class DiaryTranscriberPlugin extends Plugin {
 
     notice.hide();
     new Notice(`${completed}/${total} transcripciones completadas`);
+  }
+
+  private async activateDashboard() {
+    const { workspace } = this.app;
+    let leaf = workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD)[0];
+    if (!leaf) {
+      const rightLeaf = workspace.getRightLeaf(false);
+      if (rightLeaf) {
+        await rightLeaf.setViewState({ type: VIEW_TYPE_DASHBOARD, active: true });
+        leaf = rightLeaf;
+      }
+    }
+    if (leaf) workspace.revealLeaf(leaf);
   }
 
   private async runTranscription(

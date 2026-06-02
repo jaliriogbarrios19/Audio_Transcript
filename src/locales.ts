@@ -80,6 +80,15 @@ export interface LocaleStrings {
   thinking: string;
   writeMessage: string;
   previewNoText: string;
+  dateHeader: string;
+  noteHeader: string;
+  speakersHeader: string;
+  previewHeader: string;
+  deepseekDirect: string;
+  summaryHeading: string;
+  summarySystemPrompt: string;
+  summaryError: string;
+  unknownError: string;
 }
 
 const es: LocaleStrings = {
@@ -173,6 +182,15 @@ const es: LocaleStrings = {
   thinking: "Pensando...",
   writeMessage: "Escribí tu pregunta...",
   previewNoText: "(sin texto)",
+  dateHeader: "Fecha",
+  noteHeader: "Nota",
+  speakersHeader: "Hab.",
+  previewHeader: "Vista previa",
+  deepseekDirect: "DeepSeek directo",
+  summaryHeading: "Resumen",
+  summarySystemPrompt: "Resumí esta transcripción en bullet points concisos.",
+  summaryError: "Error al resumir",
+  unknownError: "desconocido",
 };
 
 const en: LocaleStrings = {
@@ -265,6 +283,15 @@ const en: LocaleStrings = {
   thinking: "Thinking...",
   writeMessage: "Type your question...",
   previewNoText: "(no text)",
+  dateHeader: "Date",
+  noteHeader: "Note",
+  speakersHeader: "Spk.",
+  previewHeader: "Preview",
+  deepseekDirect: "DeepSeek direct",
+  summaryHeading: "Summary",
+  summarySystemPrompt: "Summarize this transcription in concise bullet points.",
+  summaryError: "Summary error",
+  unknownError: "unknown",
 };
 
 export const LOCALES: Record<string, LocaleStrings> = { es, en };

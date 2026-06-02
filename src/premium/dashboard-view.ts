@@ -90,7 +90,7 @@ export class DashboardView extends ItemView {
 
     const kpiGrid = container.createDiv({ cls: "at-kpi-grid" });
     this.addKPI(kpiGrid, this.L("credit"),
-      this.plugin.settings.llmProvider === "spob" ? credits : "DeepSeek directo",
+      this.plugin.settings.llmProvider === "spob" ? credits : this.L("deepseekDirect"),
       this.plugin.settings.llmProvider === "spob" ? "positive" : "neutral"
     );
     this.addKPI(kpiGrid, this.L("transcriptions"), String(this.entries.length), "neutral");
@@ -118,7 +118,7 @@ export class DashboardView extends ItemView {
       const table = container.createEl("table", { cls: "at-table" });
       const thead = table.createEl("thead");
       const headerRow = thead.createEl("tr");
-      for (const h of ["Fecha", "Nota", "Hab.", "Vista previa", ""]) {
+      for (const h of [this.L("dateHeader"), this.L("noteHeader"), this.L("speakersHeader"), this.L("previewHeader"), ""]) {
         headerRow.createEl("th", { text: h });
       }
       const tbody = table.createEl("tbody");
@@ -140,7 +140,11 @@ export class DashboardView extends ItemView {
         const summarizeBtn = actionCell.createEl("button", {
           text: this.L("summarize"),
         });
-        summarizeBtn.onclick = () => this.summarizeEntry(entry);
+        summarizeBtn.onclick = async () => {
+          summarizeBtn.disabled = true;
+          await this.summarizeEntry(entry);
+          summarizeBtn.disabled = false;
+        };
       }
     }
 
@@ -156,12 +160,16 @@ export class DashboardView extends ItemView {
       deleteButtons.push(delBtn);
       delBtn.onclick = async () => {
         for (const btn of deleteButtons) btn.disabled = true;
-        this.plugin.settings.promptTemplates = remove(
-          this.plugin.settings.promptTemplates,
-          i
-        );
-        await this.plugin.saveSettings();
-        await this.refresh();
+        try {
+          this.plugin.settings.promptTemplates = remove(
+            this.plugin.settings.promptTemplates,
+            i
+          );
+          await this.plugin.saveSettings();
+          await this.refresh();
+        } catch {
+          for (const btn of deleteButtons) btn.disabled = false;
+        }
       };
     }
   }
@@ -179,7 +187,8 @@ export class DashboardView extends ItemView {
       return;
     }
 
-    const noSpeechMarkers = ["(No se detecto voz)", "(No se detectó voz)", "(No speech detected)"];
+    const noSpeechMarkers = [t("noSpeech", "es"), t("noSpeech", "en")];
+
     if (noSpeechMarkers.some((m) => entry.calloutContent.includes(m))) {
       new Notice(this.L("nothingToSummarize"));
       return;
@@ -188,21 +197,21 @@ export class DashboardView extends ItemView {
     new Notice(this.L("generatingSummary"));
     try {
       const res = await chatCompletion(config, [
-        { role: "system", content: "Resumi esta transcripcion en bullet points concisos." },
+        { role: "system", content: this.L("summarySystemPrompt") },
         { role: "user", content: entry.calloutContent },
       ]);
 
       const file = this.plugin.app.vault.getAbstractFileByPath(entry.path);
       if (file instanceof TFile) {
         const current = await this.plugin.app.vault.read(file);
-        const updated = current + `\n\n### Resumen\n${res.content}\n`;
+        const updated = current + `\n\n### ${this.L("summaryHeading")}\n${res.content}\n`;
         await this.plugin.app.vault.modify(file, updated);
         new Notice(this.L("summaryInserted"));
       } else {
-        new Notice(this.L("summaryDone") + ":\n" + res.content);
+        new Notice(`${this.L("summaryDone")}:\n${res.content}`);
       }
     } catch (err) {
-      new Notice(`Error al resumir: ${err instanceof Error ? err.message : "desconocido"}`);
+      new Notice(`${this.L("summaryError")}: ${err instanceof Error ? err.message : this.L("unknownError")}`);
     }
   }
 

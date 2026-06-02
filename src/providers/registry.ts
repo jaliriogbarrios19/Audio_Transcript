@@ -1,10 +1,35 @@
 import type { TranscriptionProvider, ProviderMeta } from "../types";
+import type { Transcriber } from "../transcriber";
+import type { Utterance, TranscriptionOptions } from "../types";
 import { GladiaTranscriber } from "./gladia";
 import { DeepgramTranscriber } from "./deepgram";
 import { AssemblyAITranscriber } from "./assemblyai";
 import { WhisperTranscriber } from "./whisper";
 import { GroqTranscriber } from "./groq";
 import { WhisperLocalTranscriber } from "./whisper-local";
+
+let spobBaseUrl = "http://localhost:8080";
+
+export function getSpobBaseUrl(): string {
+  return spobBaseUrl;
+}
+
+export function setSpobBaseUrl(url: string): void {
+  spobBaseUrl = url;
+}
+
+class SpobTranscriber implements Transcriber {
+  readonly name = "Smart Plugins Obsidian (AssemblyAI)";
+
+  async transcribe(
+    audioBlob: Blob,
+    apiKey: string,
+    options: TranscriptionOptions
+  ): Promise<Utterance[]> {
+    const transcriber = new AssemblyAITranscriber(spobBaseUrl);
+    return transcriber.transcribe(audioBlob, apiKey, options);
+  }
+}
 
 export const PROVIDER_REGISTRY: Record<TranscriptionProvider, ProviderMeta> = {
   gladia: {
@@ -61,5 +86,15 @@ export const PROVIDER_REGISTRY: Record<TranscriptionProvider, ProviderMeta> = {
     supportsDiarization: false,
     requiresApiKey: false,
     testEndpoint: undefined,
+  },
+  spob: {
+    id: "spob",
+    label: "Smart Plugins Obsidian (AssemblyAI)",
+    transcriber: new SpobTranscriber(),
+    apiKeyField: "spobApiKey",
+    modelField: "assemblyaiModel",
+    supportsDiarization: true,
+    requiresApiKey: true,
+    testEndpoint: `${spobBaseUrl}/health`,
   },
 };

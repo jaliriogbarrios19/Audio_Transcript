@@ -4,6 +4,11 @@ import { fetchWithRetry, sleep } from "../fetch-utils";
 
 export class AssemblyAITranscriber implements Transcriber {
   readonly name = "AssemblyAI";
+  private baseUrl: string;
+
+  constructor(baseUrl?: string) {
+    this.baseUrl = baseUrl ?? "https://api.assemblyai.com";
+  }
 
   async transcribe(
     audioBlob: Blob,
@@ -17,7 +22,7 @@ export class AssemblyAITranscriber implements Transcriber {
     };
 
     // 1. Upload audio
-    const uploadRes = await fetch("https://api.assemblyai.com/v2/upload", {
+    const uploadRes = await fetch(`${this.baseUrl}/v2/upload`, {
       method: "POST",
       headers: { authorization: apiKey },
       body: audioBlob,
@@ -48,7 +53,7 @@ export class AssemblyAITranscriber implements Transcriber {
     }
 
     const startRes = await fetch(
-      "https://api.assemblyai.com/v2/transcript",
+      `${this.baseUrl}/v2/transcript`,
       {
         method: "POST",
         headers,
@@ -81,7 +86,7 @@ export class AssemblyAITranscriber implements Transcriber {
       if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
 
       const res = await fetchWithRetry(
-        `https://api.assemblyai.com/v2/transcript/${id}`,
+        `${this.baseUrl}/v2/transcript/${id}`,
         {
           headers: { authorization: apiKey },
           signal,

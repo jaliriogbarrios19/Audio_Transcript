@@ -26,7 +26,16 @@ export class DashboardView extends ItemView {
     return t(key, this.plugin.getLocale());
   }
 
-  async onOpen() { await this.refresh(); }
+  async onOpen() {
+    this.registerEvent(
+      this.plugin.app.workspace.on("active-leaf-change", () => {
+        if (this.plugin.app.workspace.getActiveViewOfType(DashboardView)) {
+          this.refresh();
+        }
+      })
+    );
+    await this.refresh();
+  }
 
   async refresh() {
     const container = this.contentEl;

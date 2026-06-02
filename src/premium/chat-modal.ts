@@ -133,6 +133,11 @@ export class ChatModal extends Modal {
       this.templatePrompt = templateDropdown.value;
     };
 
+    // Response area (above input)
+    const responseArea = contentEl.createDiv({ cls: "at-chat-response" });
+    responseArea.style.cssText =
+      "margin-bottom:12px;padding:12px;background:var(--background-secondary);border-radius:6px;min-height:40px;display:none;";
+
     // Chat input
     contentEl.createEl("h4", { text: this.L("yourMessage") });
     const textarea = contentEl.createEl("textarea", {
@@ -140,11 +145,6 @@ export class ChatModal extends Modal {
       attr: { rows: "4", placeholder: this.L("writeMessage") },
     }) as HTMLTextAreaElement;
     textarea.style.width = "100%";
-
-    // Response area
-    const responseArea = contentEl.createDiv({ cls: "at-chat-response" });
-    responseArea.style.cssText =
-      "margin-top:12px;padding:12px;background:var(--background-secondary);border-radius:6px;min-height:40px;display:none;";
 
     // Actions
     const btnRow = contentEl.createDiv({ cls: "at-actions", attr: { style: "margin-top:12px;" } });

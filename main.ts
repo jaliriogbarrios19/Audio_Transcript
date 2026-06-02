@@ -93,6 +93,12 @@ export default class DiaryTranscriberPlugin extends Plugin {
       name: "Abrir dashboard de transcripciones",
       callback: () => this.activateDashboard(),
     });
+
+    this.addStatusBarItem().setText(this.getStatusBarText());
+
+    if (this.hasLLMProvider()) {
+      this.updateStatusBarCredits();
+    }
   }
 
   onunload() {
@@ -225,6 +231,33 @@ export default class DiaryTranscriberPlugin extends Plugin {
       }
     }
     if (leaf) workspace.revealLeaf(leaf);
+  }
+
+  private hasLLMProvider(): boolean {
+    if (this.settings.llmProvider === "deepseek" && this.settings.deepseekApiKey) return true;
+    if (this.settings.llmProvider === "spob" && this.settings.spobApiKey) return true;
+    return false;
+  }
+
+  private getStatusBarText(): string {
+    if (!this.hasLLMProvider()) return "";
+    return this.settings.llmProvider === "spob" ? "spob: —" : "DeepSeek directo";
+  }
+
+  private async updateStatusBarCredits() {
+    if (this.settings.llmProvider !== "spob" || !this.settings.spobApiKey) return;
+    try {
+      const baseUrl = this.settings.spobBaseUrl || "https://spob-backend.fly.dev";
+      const res = await fetch(`${baseUrl}/me`, {
+        headers: { Authorization: `Bearer ${this.settings.spobApiKey}` },
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { credits?: number };
+        if (data.credits != null) {
+          this.addStatusBarItem().setText(`spob: $${data.credits.toFixed(2)}`);
+        }
+      }
+    } catch { /* offline */ }
   }
 
   private async runTranscription(

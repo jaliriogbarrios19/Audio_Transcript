@@ -144,3 +144,41 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Chat modal */
+.at-chat-modal h2 { margin-bottom: 16px; }
+.at-chat-modal h4 { margin: 14px 0 6px 0; }
+
+.at-context-selector {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 6px;
+}
+.at-context-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.at-template-dropdown { width: 100%; margin-bottom: 8px; }
+
+.at-chat-input {
+  width: 100%;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.at-send-btn {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.at-cost-info {
+  color: var(--text-muted);
+  font-size: 0.75em;
+  margin-top: 8px;
+}
+.at-error { color: var(--text-error); }

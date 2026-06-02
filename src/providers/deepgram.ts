@@ -11,16 +11,13 @@ export class DeepgramTranscriber implements Transcriber {
   ): Promise<Utterance[]> {
     const params = new URLSearchParams({
       diarize: "true",
+      diarize_version: "2024-01-26",
       smart_format: "true",
       utterances: "true",
     });
 
     if (options.language) {
       params.set("language", options.language);
-    }
-
-    if (options.speakerNames.length > 0) {
-      params.set("diarize_version", "2024-01-26");
     }
 
     const url = `https://api.deepgram.com/v1/listen?${params.toString()}`;

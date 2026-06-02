@@ -317,6 +317,16 @@ export class SettingsTab extends PluginSettingTab {
     this.addApiKeyField(containerEl, "OpenAI Whisper", "whisperApiKey");
     this.addApiKeyField(containerEl, "Groq", "groqApiKey");
     this.addApiKeyField(containerEl, "Smart Plugins Obsidian", "spobApiKey");
+
+    const spobLink = containerEl.createDiv({
+      cls: "setting-item-description",
+      attr: { style: "margin-top: -8px; margin-bottom: 16px;" },
+    });
+    spobLink.createEl("a", {
+      text: "Obtén tu API key en spob-backend.fly.dev →",
+      href: "https://spob-backend.fly.dev",
+    });
+
     this.addWhisperLocalUrlField(containerEl, true);
 
     // ── Support ───────────────────────────────────────────

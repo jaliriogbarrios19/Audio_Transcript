@@ -23,6 +23,9 @@ The plugin auto-detects your Obsidian language. No manual language setting neede
 | OpenAI Whisper | No | Pay-as-you-go | [platform.openai.com](https://platform.openai.com) |
 | Groq (Whisper) | No | Free tier | [console.groq.com](https://console.groq.com) |
 | Whisper (local) | No | Self-hosted | [whisper.cpp](https://github.com/ggerganov/whisper.cpp) |
+| **Smart Plugins Obsidian (spob)** | **Yes** | **Pay as you go** | **[spob-backend.fly.dev](https://spob-backend.fly.dev)** |
+
+> **spob** es el proveedor por defecto. [Obtené tu API key](https://spob-backend.fly.dev) y empezá a transcribir con AssemblyAI al instante — sin configurar nada más.
 
 > Providers without diarization produce a single text block. Use Gladia, Deepgram, or AssemblyAI for speaker separation.
 

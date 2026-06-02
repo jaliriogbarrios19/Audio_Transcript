@@ -1,6 +1,7 @@
 import { App, Setting } from "obsidian";
 import type { PluginSettings, DEFAULT_TEMPLATE as _DT } from "./settings";
 import type { RecordingSampleRate, RecordingMode, LLMProvider } from "./types";
+import { LLM_PROVIDERS, LLM_MODELS, API_KEY_FIELDS } from "./types";
 import type { LocaleStrings } from "./locales";
 import {
   addApiKeyField,
@@ -175,57 +176,70 @@ export function buildCommonSections(
   const save = () => saveSettings();
   const s = settings;
 
-  // LLM Provider
-  containerEl.createEl("h3", { text: "IA (Proveedor LLM)" });
+  // LLM Providers
+  containerEl.createEl("h3", { text: "IA (Proveedores LLM)" });
   containerEl.createEl("p", {
-    text: "Configura el proveedor de IA para resumenes y chat con tus transcripciones.",
+    text: "Configura los proveedores de IA para chat y resumenes. Elegi cual usar en modo Flash y Advanced.",
     cls: "setting-item-description",
   });
 
-  new Setting(containerEl)
-    .setName("Proveedor LLM")
-    .setDesc("spob: gestion de creditos integrada. DeepSeek: usa tu propia API key.")
-    .addDropdown((dropdown) => {
-      dropdown.addOption("spob", "Smart Plugins Obsidian (spob)");
-      dropdown.addOption("deepseek", "DeepSeek (directo)");
-      dropdown
-        .setValue(settings.llmProvider)
-        .onChange(async (v: string) => {
-          settings.llmProvider = v as LLMProvider;
+  for (const { value: provider, label } of LLM_PROVIDERS) {
+    const apiKeyField = API_KEY_FIELDS[provider] as keyof PluginSettings;
+    addApiKeyField(containerEl, s, save, `${label} API Key`, apiKeyField);
+    if (provider === "spob") {
+      const link = containerEl.createDiv({
+        cls: "setting-item-description",
+        attr: { style: "margin-top: -8px; margin-bottom: 8px;" },
+      });
+      link.createEl("a", {
+        text: "Obten tu API key y creditos en spob-backend.fly.dev ->",
+        href: "https://spob-backend.fly.dev",
+      });
+    }
+  }
+
+  // Flash / Advanced mode
+  containerEl.createEl("h3", { text: "Modos de chat" });
+
+  const buildModeSetting = (
+    modeLabel: string,
+    providerKey: keyof PluginSettings,
+    modelKey: keyof PluginSettings
+  ) => {
+    const currentProvider = (settings[providerKey] as LLMProvider) || "spob";
+    const currentModel = (settings[modelKey] as string) || "";
+
+    new Setting(containerEl)
+      .setName(`${modeLabel} — Proveedor`)
+      .setDesc("Proveedor LLM a usar en este modo")
+      .addDropdown((dd) => {
+        for (const { value, label } of LLM_PROVIDERS) {
+          dd.addOption(value, label);
+        }
+        dd.setValue(currentProvider).onChange(async (v) => {
+          (settings as unknown as Record<string, unknown>)[providerKey] = v;
           await saveSettings();
           render();
         });
-    });
-
-  if (settings.llmProvider === "spob") {
-    addApiKeyField(containerEl, s, save, "spob API Key (IA)", "spobApiKey");
-    const spobLLMLink = containerEl.createDiv({
-      cls: "setting-item-description",
-      attr: { style: "margin-top: -8px; margin-bottom: 8px;" },
-    });
-    spobLLMLink.createEl("a", {
-      text: "Obten tu API key y creditos en spob-backend.fly.dev ->",
-      href: "https://spob-backend.fly.dev",
-    });
-  } else {
-    addApiKeyField(containerEl, s, save, "DeepSeek API Key", "deepseekApiKey");
-  }
-
-  if (settings.llmProvider === "deepseek") {
-    new Setting(containerEl)
-      .setName("Modelo DeepSeek")
-      .setDesc("Flash: mas rapido y economico. Pro: mayor precision.")
-      .addDropdown((dropdown) => {
-        dropdown.addOption("deepseek-v4-flash", "DeepSeek V4 Flash");
-        dropdown.addOption("deepseek-v4-pro", "DeepSeek V4 Pro");
-        dropdown
-          .setValue(settings.deepseekModel)
-          .onChange(async (v: string) => {
-            settings.deepseekModel = v as "deepseek-v4-pro" | "deepseek-v4-flash";
-            await saveSettings();
-          });
       });
-  }
+
+    const models = LLM_MODELS[currentProvider] ?? [];
+    new Setting(containerEl)
+      .setName(`${modeLabel} — Modelo`)
+      .setDesc(models.find((m) => m.modelId === currentModel)?.description ?? "")
+      .addDropdown((dd) => {
+        for (const m of models) {
+          dd.addOption(m.modelId, m.label);
+        }
+        dd.setValue(currentModel || models[0]?.modelId || "").onChange(async (v) => {
+          (settings as unknown as Record<string, unknown>)[modelKey] = v;
+          await saveSettings();
+        });
+      });
+  };
+
+  buildModeSetting("Flash", "flashProvider", "flashModel");
+  buildModeSetting("Advanced", "advancedProvider", "advancedModel");
 
   // All API keys
   containerEl.createEl("h3", { text: "Todas las API Keys" });

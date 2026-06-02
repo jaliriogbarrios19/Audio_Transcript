@@ -236,22 +236,26 @@ export default class DiaryTranscriberPlugin extends Plugin {
   }
 
   private hasLLMProvider(): boolean {
-    if (this.settings.llmProvider === "deepseek" && this.settings.deepseekApiKey) return true;
-    if (this.settings.llmProvider === "spob" && this.settings.spobApiKey) return true;
-    return false;
+    const s = this.settings;
+    const flashKey = `${{ openai: "openai", anthropic: "anthropic", deepseek: "deepseek", gemini: "gemini", openrouter: "openrouter", grok: "grok", glm: "glm", spob: "spob" }[s.flashProvider]}ApiKey` as keyof PluginSettings;
+    const advKey = `${{ openai: "openai", anthropic: "anthropic", deepseek: "deepseek", gemini: "gemini", openrouter: "openrouter", grok: "grok", glm: "glm", spob: "spob" }[s.advancedProvider]}ApiKey` as keyof PluginSettings;
+    return !!(s[flashKey] || s[advKey]);
   }
 
   private getStatusBarText(): string {
     if (!this.hasLLMProvider()) return "";
-    return this.settings.llmProvider === "spob" ? "spob: —" : "DeepSeek directo";
+    return this.settings.flashProvider === "spob" || this.settings.advancedProvider === "spob"
+      ? "spob: —" : "IA configurada";
   }
 
   private async updateStatusBarCredits() {
-    if (this.settings.llmProvider !== "spob" || !this.settings.spobApiKey) return;
+    const s = this.settings;
+    const spobActive = s.flashProvider === "spob" || s.advancedProvider === "spob";
+    if (!spobActive || !s.spobApiKey) return;
     try {
-      const baseUrl = this.settings.spobBaseUrl || "https://spob-backend.fly.dev";
+      const baseUrl = s.spobBaseUrl || "https://spob-backend.fly.dev";
       const res = await fetch(`${baseUrl}/me`, {
-        headers: { Authorization: `Bearer ${this.settings.spobApiKey}` },
+        headers: { Authorization: `Bearer ${s.spobApiKey}` },
       });
       if (res.ok) {
         const data = (await res.json()) as { credits?: number };

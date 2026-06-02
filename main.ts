@@ -4,6 +4,7 @@ import {
   MarkdownView,
   Notice,
   Plugin,
+  TFile,
   moment,
 } from "obsidian";
 import {
@@ -235,17 +236,63 @@ export default class DiaryTranscriberPlugin extends Plugin {
     if (leaf) workspace.revealLeaf(leaf);
   }
 
+  async transcribeFromDashboard(): Promise<void> {
+    const choice = await new ChoiceModal(this.app, this.getLocale()).open();
+    if (!choice) return;
+
+    const note = await this.ensurePluginNote();
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+    const editor = view?.editor;
+    if (!editor) {
+      new Notice("No se pudo abrir una nota para la transcripcion.");
+      return;
+    }
+
+    if (choice === "record") {
+      const blob = await new RecordingModal(this.app, this.getLocale(), this.settings.recordingSampleRate, this.settings.recordingMode).start();
+      if (!blob) return;
+      await this.runTranscription(editor, blob);
+    } else if (choice === "file") {
+      const file = await pickAudioFile();
+      if (!file) return;
+      await this.runTranscription(editor, file);
+    }
+  }
+
+  private async ensurePluginNote(): Promise<void> {
+    const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    const folder = this.settings.audioFolder || "";
+    const path = folder ? `${folder}/Transcripcion-${ts}.md` : `Transcripcion-${ts}.md`;
+
+    if (folder) {
+      const existing = this.app.vault.getAbstractFileByPath(folder);
+      if (!existing) await this.app.vault.createFolder(folder);
+    }
+
+    const existing = this.app.vault.getAbstractFileByPath(path);
+    if (!existing) {
+      const file = await this.app.vault.create(path, "");
+      const leaf = this.app.workspace.getLeaf(false);
+      if (leaf) await leaf.openFile(file);
+    } else if (existing instanceof TFile) {
+      const leaf = this.app.workspace.getLeaf(false);
+      if (leaf) await leaf.openFile(existing);
+    }
+  }
+
   private hasLLMProvider(): boolean {
     const s = this.settings;
-    const flashKey = `${{ openai: "openai", anthropic: "anthropic", deepseek: "deepseek", gemini: "gemini", openrouter: "openrouter", grok: "grok", glm: "glm", spob: "spob" }[s.flashProvider]}ApiKey` as keyof PluginSettings;
-    const advKey = `${{ openai: "openai", anthropic: "anthropic", deepseek: "deepseek", gemini: "gemini", openrouter: "openrouter", grok: "grok", glm: "glm", spob: "spob" }[s.advancedProvider]}ApiKey` as keyof PluginSettings;
-    return !!(s[flashKey] || s[advKey]);
+    const providers = ["openai","anthropic","deepseek","gemini","openrouter","grok","glm","spob"];
+    for (const p of providers) {
+      const key = `${p}ApiKey` as keyof PluginSettings;
+      if (s[key]) return true;
+    }
+    return false;
   }
 
   private getStatusBarText(): string {
     if (!this.hasLLMProvider()) return "";
-    return this.settings.flashProvider === "spob" || this.settings.advancedProvider === "spob"
-      ? "spob: —" : "IA configurada";
+    return "IA configurada";
   }
 
   private async updateStatusBarCredits() {

@@ -66,23 +66,61 @@ export class ChatModal extends Modal {
 
     // Context selector
     contentEl.createEl("h4", { text: this.L("contextSection") });
+
+    const searchInput = contentEl.createEl("input", {
+      cls: "at-search-input",
+      attr: { placeholder: "Buscar nota por nombre...", type: "text" },
+    }) as HTMLInputElement;
+    searchInput.style.cssText = "width:100%;margin-bottom:8px;padding:6px;border-radius:4px;";
+
     const ctxContainer = contentEl.createDiv({ cls: "at-context-selector" });
-    if (entries.length === 0) {
-      ctxContainer.createEl("p", { text: this.L("noTranscriptions"), cls: "at-empty" });
-    } else {
-      for (const entry of entries) {
+
+    const renderContext = (filter = "") => {
+      ctxContainer.empty();
+      const allEntries = getCachedEntries() ?? entries;
+      const filtered = filter
+        ? allEntries.filter((e) => e.noteName.toLowerCase().includes(filter.toLowerCase()))
+        : allEntries;
+
+      if (filter) {
+        const vaultNotes = this.plugin.app.vault.getMarkdownFiles()
+          .filter((f) => f.basename.toLowerCase().includes(filter.toLowerCase()))
+          .filter((f) => !allEntries.some((e) => e.path === f.path));
+        for (const f of vaultNotes.slice(0, 10)) {
+          const row = ctxContainer.createDiv({ cls: "at-context-row" });
+          const cb = row.createEl("input", { type: "checkbox" });
+          row.createSpan({ text: `📄 ${f.basename}` });
+          cb.onchange = async () => {
+            if (cb.checked) {
+              const content = await this.plugin.app.vault.cachedRead(f);
+              this.selectedEntries.push({
+                path: f.path, noteName: f.basename, date: "",
+                speakerCount: 0, preview: content.slice(0, 120),
+                calloutContent: content,
+              });
+            } else {
+              this.selectedEntries = this.selectedEntries.filter((e) => e.path !== f.path);
+            }
+          };
+        }
+      }
+
+      if (filtered.length === 0 && !filter) {
+        ctxContainer.createEl("p", { text: this.L("noTranscriptions"), cls: "at-empty" });
+      }
+      for (const entry of filtered) {
         const row = ctxContainer.createDiv({ cls: "at-context-row" });
         const cb = row.createEl("input", { type: "checkbox" });
         row.createSpan({ text: `${entry.noteName} (${entry.date})` });
         cb.onchange = () => {
-          if (cb.checked) {
-            this.selectedEntries.push(entry);
-          } else {
-            this.selectedEntries = this.selectedEntries.filter((e) => e !== entry);
-          }
+          if (cb.checked) { this.selectedEntries.push(entry); }
+          else { this.selectedEntries = this.selectedEntries.filter((e) => e !== entry); }
         };
       }
-    }
+    };
+
+    searchInput.oninput = () => renderContext(searchInput.value);
+    renderContext();
 
     // Template dropdown
     contentEl.createEl("h4", { text: this.L("templateSection") });

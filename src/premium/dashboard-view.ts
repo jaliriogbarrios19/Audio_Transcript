@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, Notice, TFile } from "obsidian";
+import { ItemView, WorkspaceLeaf, Notice, TFile, Modal, Setting } from "obsidian";
 import type DiaryTranscriberPlugin from "../../main";
 import { scanVault, getCachedEntries } from "./transcription-indexer";
 import { getAll, remove } from "./template-store";
@@ -95,7 +95,15 @@ export class DashboardView extends ItemView {
     this.addKPI(kpiGrid, "🧠", this.L("templates"), String(templates.length), "neutral");
     this.addKPI(kpiGrid, "🤖", this.L("aiProvider"),
       `${flashCfg ? "⚡ " + flashCfg.model : "—"} / ${advCfg ? "🧠 " + advCfg.model : "—"}`,
-      "neutral"
+      "neutral",
+      undefined,
+      () => {
+        (this.plugin as any).app.setting?.open();
+        const settingTab = (this.plugin as any).app.setting?.pluginTabs?.find(
+          (t: any) => t.id === "audio-transcript"
+        );
+        if (settingTab) (this.plugin as any).app.setting?.openTabById("audio-transcript");
+      }
     );
 
     // Quick actions
@@ -136,6 +144,10 @@ export class DashboardView extends ItemView {
     container.createEl("h3", { text: this.L("templateSection") });
     const tl = container.createDiv({ cls: "at-template-list" });
     const delBtns: HTMLButtonElement[] = [];
+
+    const addRow = tl.createDiv({ cls: "at-template-row", attr: { style: "justify-content:center;" } });
+    const addBtn = addRow.createEl("button", { text: "+ Nuevo template" });
+    addBtn.onclick = () => this.addTemplate();
     for (let i = 0; i < templates.length; i++) {
       const t = templates[i];
       const row = tl.createDiv({ cls: "at-template-row" });
@@ -182,14 +194,65 @@ export class DashboardView extends ItemView {
     }
   }
 
+  private async addTemplate() {
+    new AddTemplateModal(this.plugin.app, async (name, prompt) => {
+      this.plugin.settings.promptTemplates = [
+        ...this.plugin.settings.promptTemplates,
+        { name, prompt },
+      ];
+      await this.plugin.saveSettings();
+      await this.refresh();
+    }).open();
+  }
+
   private addKPI(
     container: HTMLElement, icon: string, label: string, value: string,
-    colorClass: string, asyncValue?: (el: HTMLElement) => Promise<void>
+    colorClass: string, asyncValue?: (el: HTMLElement) => Promise<void>,
+    onClick?: () => void
   ) {
     const card = container.createDiv({ cls: "at-kpi-card" });
+    if (onClick) {
+      card.style.cursor = "pointer";
+      card.onclick = onClick;
+    }
     card.createSpan({ text: icon, cls: "at-kpi-icon" });
     card.createEl("h4", { text: label });
     const valEl = card.createEl("p", { text: value, cls: `at-kpi-value ${colorClass}` });
     if (asyncValue) asyncValue(valEl);
+  }
+}
+
+class AddTemplateModal extends Modal {
+  private onSubmit: (name: string, prompt: string) => void;
+
+  constructor(app: import("obsidian").App, onSubmit: (name: string, prompt: string) => void) {
+    super(app);
+    this.onSubmit = onSubmit;
+  }
+
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.createEl("h3", { text: "Nuevo template" });
+
+    let name = "";
+    let prompt = "";
+
+    new Setting(contentEl).setName("Nombre").addText((t) => {
+      t.setPlaceholder("Ej: Minuta de reunion").onChange((v) => (name = v));
+    });
+    new Setting(contentEl).setName("Prompt").addTextArea((t) => {
+      t.setPlaceholder("Instruccion para el LLM...").onChange((v) => (prompt = v));
+      t.inputEl.rows = 4;
+      t.inputEl.style.width = "100%";
+    });
+
+    const btnRow = contentEl.createDiv({ cls: "at-actions", attr: { style: "margin-top:12px;" } });
+    btnRow.createEl("button", { text: "Guardar" }).onclick = () => {
+      if (!name.trim() || !prompt.trim()) return;
+      this.onSubmit(name.trim(), prompt.trim());
+      this.close();
+    };
+    btnRow.createEl("button", { text: "Cancelar" }).onclick = () => this.close();
   }
 }

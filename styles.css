@@ -40,3 +40,107 @@
   background: var(--background-modifier-success);
   color: var(--text-success);
 }
+
+/* Dashboard */
+.at-dashboard { padding: 16px; }
+
+.at-banner {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  margin-top: 24px;
+}
+.at-banner-hint { color: var(--text-muted); font-size: 0.85em; }
+
+.at-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.at-kpi-card {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+}
+.at-kpi-card h4 {
+  margin: 0 0 6px 0;
+  font-size: 0.8em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.at-kpi-value {
+  font-size: 1.6em;
+  font-weight: 700;
+  margin: 0;
+}
+.at-kpi-value.positive { color: var(--color-green); }
+.at-kpi-value.negative { color: var(--color-red); }
+.at-kpi-value.neutral { color: var(--text-normal); }
+
+.at-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.at-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+.at-table th {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+  font-size: 0.8em;
+  text-transform: uppercase;
+}
+.at-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.at-clickable-row { cursor: pointer; }
+.at-clickable-row:hover { background: var(--background-modifier-hover); }
+.at-preview { color: var(--text-muted); }
+
+.at-empty {
+  color: var(--text-muted);
+  padding: 24px;
+  text-align: center;
+}
+
+.at-template-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.at-template-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--background-secondary);
+  border-radius: 6px;
+}
+.at-template-name {
+  font-weight: 600;
+  min-width: 100px;
+}
+.at-template-preview {
+  flex: 1;
+  color: var(--text-muted);
+  font-size: 0.85em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

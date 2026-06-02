@@ -5,6 +5,7 @@ import { getAll, remove } from "./template-store";
 import { getLLMConfig, chatCompletion } from "./llm-client";
 import { ChatModal } from "./chat-modal";
 import type { TranscriptionEntry } from "../types";
+import { t, type LocaleStrings } from "../locales";
 
 export const VIEW_TYPE_DASHBOARD = "at-dashboard";
 
@@ -29,12 +30,16 @@ export class DashboardView extends ItemView {
     return "mic";
   }
 
+  private L(key: keyof LocaleStrings): string {
+    return t(key, this.plugin.getLocale());
+  }
+
   async onOpen() {
     await this.refresh();
   }
 
   async refresh() {
-    const container = this.containerEl.children[1] as HTMLElement;
+    const container = this.contentEl;
     container.empty();
     container.addClass("at-dashboard");
 
@@ -56,13 +61,11 @@ export class DashboardView extends ItemView {
   }
 
   private renderNoProvider(container: HTMLElement) {
-    container.createEl("h2", { text: "Audio Transcript — Dashboard" });
+    container.createEl("h2", { text: this.L("dashboardTitle") });
     const banner = container.createDiv({ cls: "at-banner" });
+    banner.createEl("p", { text: this.L("noLLMConfig") });
     banner.createEl("p", {
-      text: "Activa un proveedor LLM en Settings para desbloquear resumenes y chat con IA.",
-    });
-    banner.createEl("p", {
-      text: "Settings → Audio Transcript → IA (Proveedor LLM)",
+      text: this.L("noLLMConfigHint"),
       cls: "at-banner-hint",
     });
   }
@@ -83,35 +86,32 @@ export class DashboardView extends ItemView {
 
     const templates = getAll(this.plugin.settings.promptTemplates);
 
-    container.createEl("h2", { text: "Audio Transcript — Dashboard" });
+    container.createEl("h2", { text: this.L("dashboardTitle") });
 
-    // KPI Grid
     const kpiGrid = container.createDiv({ cls: "at-kpi-grid" });
-    this.addKPI(kpiGrid, "Credito",
+    this.addKPI(kpiGrid, this.L("credit"),
       this.plugin.settings.llmProvider === "spob" ? credits : "DeepSeek directo",
       this.plugin.settings.llmProvider === "spob" ? "positive" : "neutral"
     );
-    this.addKPI(kpiGrid, "Transcripciones", String(this.entries.length), "neutral");
-    this.addKPI(kpiGrid, "Templates", String(templates.length), "neutral");
-    this.addKPI(kpiGrid, "Proveedor IA",
+    this.addKPI(kpiGrid, this.L("transcriptions"), String(this.entries.length), "neutral");
+    this.addKPI(kpiGrid, this.L("templates"), String(templates.length), "neutral");
+    this.addKPI(kpiGrid, this.L("aiProvider"),
       this.plugin.settings.llmProvider === "spob" ? "spob" : "DeepSeek",
       "neutral"
     );
 
-    // Quick actions
     const actions = container.createDiv({ cls: "at-actions" });
-    const chatBtn = actions.createEl("button", { text: "Nuevo chat" });
+    const chatBtn = actions.createEl("button", { text: this.L("newChat") });
     chatBtn.onclick = () => {
       new ChatModal(this.plugin.app, this.plugin).open();
     };
-    const refreshBtn = actions.createEl("button", { text: "Refrescar" });
+    const refreshBtn = actions.createEl("button", { text: this.L("refreshBtn") });
     refreshBtn.onclick = () => this.refresh();
 
-    // History table
-    container.createEl("h3", { text: "Historial de transcripciones" });
+    container.createEl("h3", { text: this.L("history") });
     if (this.entries.length === 0) {
       container.createEl("p", {
-        text: "No hay transcripciones todavia. Graba o transcribe un audio para empezar.",
+        text: this.L("historyEmpty"),
         cls: "at-empty",
       });
     } else {
@@ -135,31 +135,33 @@ export class DashboardView extends ItemView {
           this.plugin.app.workspace.openLinkText(entry.path, "", false);
         };
         row.createEl("td", { text: String(entry.speakerCount) });
-        row.createEl("td", { text: entry.preview, cls: "at-preview" });
+        row.createEl("td", { text: entry.preview || this.L("previewNoText"), cls: "at-preview" });
         const actionCell = row.createEl("td");
         const summarizeBtn = actionCell.createEl("button", {
-          text: "Resumir",
+          text: this.L("summarize"),
         });
         summarizeBtn.onclick = () => this.summarizeEntry(entry);
       }
     }
 
-    // Templates
-    container.createEl("h3", { text: "Templates de prompt" });
+    container.createEl("h3", { text: this.L("templateSection") });
     const templateList = container.createDiv({ cls: "at-template-list" });
+    const deleteButtons: HTMLButtonElement[] = [];
     for (let i = 0; i < templates.length; i++) {
       const t = templates[i];
       const row = templateList.createDiv({ cls: "at-template-row" });
       row.createSpan({ text: t.name, cls: "at-template-name" });
       row.createSpan({ text: t.prompt.slice(0, 60) + (t.prompt.length > 60 ? "..." : ""), cls: "at-template-preview" });
       const delBtn = row.createEl("button", { text: "x" });
+      deleteButtons.push(delBtn);
       delBtn.onclick = async () => {
+        for (const btn of deleteButtons) btn.disabled = true;
         this.plugin.settings.promptTemplates = remove(
           this.plugin.settings.promptTemplates,
           i
         );
         await this.plugin.saveSettings();
-        this.refresh();
+        await this.refresh();
       };
     }
   }
@@ -173,16 +175,17 @@ export class DashboardView extends ItemView {
       this.plugin.settings.deepseekModel
     );
     if (!config) {
-      new Notice("Configura un proveedor LLM en Settings.");
+      new Notice(this.L("configLLM"));
       return;
     }
 
-    if (entry.calloutContent.includes("(No se detecto voz)")) {
-      new Notice("Nada para resumir");
+    const noSpeechMarkers = ["(No se detecto voz)", "(No se detectó voz)", "(No speech detected)"];
+    if (noSpeechMarkers.some((m) => entry.calloutContent.includes(m))) {
+      new Notice(this.L("nothingToSummarize"));
       return;
     }
 
-    new Notice("Generando resumen...");
+    new Notice(this.L("generatingSummary"));
     try {
       const res = await chatCompletion(config, [
         { role: "system", content: "Resumi esta transcripcion en bullet points concisos." },
@@ -194,9 +197,9 @@ export class DashboardView extends ItemView {
         const current = await this.plugin.app.vault.read(file);
         const updated = current + `\n\n### Resumen\n${res.content}\n`;
         await this.plugin.app.vault.modify(file, updated);
-        new Notice("Resumen listo e insertado en la nota");
+        new Notice(this.L("summaryInserted"));
       } else {
-        new Notice("Resumen listo:\n" + res.content);
+        new Notice(this.L("summaryDone") + ":\n" + res.content);
       }
     } catch (err) {
       new Notice(`Error al resumir: ${err instanceof Error ? err.message : "desconocido"}`);

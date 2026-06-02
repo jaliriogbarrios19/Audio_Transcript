@@ -78,8 +78,8 @@
   font-weight: 700;
   margin: 0;
 }
-.at-kpi-value.positive { color: var(--color-green); }
-.at-kpi-value.negative { color: var(--color-red); }
+.at-kpi-value.positive { color: var(--text-success); }
+.at-kpi-value.negative { color: var(--text-error); }
 .at-kpi-value.neutral { color: var(--text-normal); }
 
 .at-actions {

@@ -211,19 +211,21 @@ export function buildCommonSections(
     addApiKeyField(containerEl, s, save, "DeepSeek API Key", "deepseekApiKey");
   }
 
-  new Setting(containerEl)
-    .setName("Modelo LLM")
-    .setDesc("Flash: mas rapido y economico. Pro: mayor precision.")
-    .addDropdown((dropdown) => {
-      dropdown.addOption("deepseek-v4-flash", "DeepSeek V4 Flash");
-      dropdown.addOption("deepseek-v4-pro", "DeepSeek V4 Pro");
-      dropdown
-        .setValue(settings.deepseekModel)
-        .onChange(async (v: string) => {
-          settings.deepseekModel = v as "deepseek-v4-pro" | "deepseek-v4-flash";
-          await saveSettings();
-        });
-    });
+  if (settings.llmProvider === "deepseek") {
+    new Setting(containerEl)
+      .setName("Modelo DeepSeek")
+      .setDesc("Flash: mas rapido y economico. Pro: mayor precision.")
+      .addDropdown((dropdown) => {
+        dropdown.addOption("deepseek-v4-flash", "DeepSeek V4 Flash");
+        dropdown.addOption("deepseek-v4-pro", "DeepSeek V4 Pro");
+        dropdown
+          .setValue(settings.deepseekModel)
+          .onChange(async (v: string) => {
+            settings.deepseekModel = v as "deepseek-v4-pro" | "deepseek-v4-flash";
+            await saveSettings();
+          });
+      });
+  }
 
   // All API keys
   containerEl.createEl("h3", { text: "Todas las API Keys" });

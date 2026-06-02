@@ -1,6 +1,6 @@
 import { App, Setting } from "obsidian";
 import type { PluginSettings, DEFAULT_TEMPLATE as _DT } from "./settings";
-import type { RecordingSampleRate, RecordingMode } from "./types";
+import type { RecordingSampleRate, RecordingMode, LLMProvider } from "./types";
 import type { LocaleStrings } from "./locales";
 import {
   addApiKeyField,
@@ -172,15 +172,65 @@ export function buildCommonSections(
         })
     );
 
+  const save = () => saveSettings();
+  const s = settings;
+
+  // LLM Provider
+  containerEl.createEl("h3", { text: "IA (Proveedor LLM)" });
+  containerEl.createEl("p", {
+    text: "Configura el proveedor de IA para resumenes y chat con tus transcripciones.",
+    cls: "setting-item-description",
+  });
+
+  new Setting(containerEl)
+    .setName("Proveedor LLM")
+    .setDesc("spob: gestion de creditos integrada. DeepSeek: usa tu propia API key.")
+    .addDropdown((dropdown) => {
+      dropdown.addOption("spob", "Smart Plugins Obsidian (spob)");
+      dropdown.addOption("deepseek", "DeepSeek (directo)");
+      dropdown
+        .setValue(settings.llmProvider)
+        .onChange(async (v: string) => {
+          settings.llmProvider = v as LLMProvider;
+          await saveSettings();
+          render();
+        });
+    });
+
+  if (settings.llmProvider === "spob") {
+    addApiKeyField(containerEl, s, save, "spob API Key (IA)", "spobApiKey");
+    const spobLLMLink = containerEl.createDiv({
+      cls: "setting-item-description",
+      attr: { style: "margin-top: -8px; margin-bottom: 8px;" },
+    });
+    spobLLMLink.createEl("a", {
+      text: "Obten tu API key y creditos en spob-backend.fly.dev ->",
+      href: "https://spob-backend.fly.dev",
+    });
+  } else {
+    addApiKeyField(containerEl, s, save, "DeepSeek API Key", "deepseekApiKey");
+  }
+
+  new Setting(containerEl)
+    .setName("Modelo LLM")
+    .setDesc("Flash: mas rapido y economico. Pro: mayor precision.")
+    .addDropdown((dropdown) => {
+      dropdown.addOption("deepseek-v4-flash", "DeepSeek V4 Flash");
+      dropdown.addOption("deepseek-v4-pro", "DeepSeek V4 Pro");
+      dropdown
+        .setValue(settings.deepseekModel)
+        .onChange(async (v: string) => {
+          settings.deepseekModel = v as "deepseek-v4-pro" | "deepseek-v4-flash";
+          await saveSettings();
+        });
+    });
+
   // All API keys
   containerEl.createEl("h3", { text: "Todas las API Keys" });
   containerEl.createEl("p", {
     text: "Las claves se almacenan localmente en los datos del plugin.",
     cls: "setting-item-description",
   });
-
-  const save = () => saveSettings();
-  const s = settings;
 
   addApiKeyField(containerEl, s, save, "Gladia", "gladiaApiKey");
   addApiKeyField(containerEl, s, save, "Deepgram", "deepgramApiKey");
@@ -194,7 +244,7 @@ export function buildCommonSections(
     attr: { style: "margin-top: -8px; margin-bottom: 16px;" },
   });
   spobLink.createEl("a", {
-    text: "Obten tu API key en spob-backend.fly.dev →",
+    text: "Obten tu API key en spob-backend.fly.dev ->",
     href: "https://spob-backend.fly.dev",
   });
 
@@ -207,11 +257,11 @@ export function buildCommonSections(
     },
   });
   support.createEl("a", {
-    text: "☕ Support this plugin",
+    text: ":coffee: Support this plugin",
     href: "https://paypal.me/jesusgarciapsi",
   });
   support.createEl("span", {
-    text: " · Free and open source",
+    text: " . Free and open source",
     cls: "setting-item-description",
   });
 }

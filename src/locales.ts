@@ -80,6 +80,7 @@ export interface LocaleStrings {
   thinking: string;
   writeMessage: string;
   previewNoText: string;
+  transcribe: string;
   dateHeader: string;
   noteHeader: string;
   speakersHeader: string;
@@ -182,6 +183,7 @@ const es: LocaleStrings = {
   thinking: "Pensando...",
   writeMessage: "Escribí tu pregunta...",
   previewNoText: "(sin texto)",
+  transcribe: "Transcribir",
   dateHeader: "Fecha",
   noteHeader: "Nota",
   speakersHeader: "Hab.",
@@ -283,6 +285,7 @@ const en: LocaleStrings = {
   thinking: "Thinking...",
   writeMessage: "Type your question...",
   previewNoText: "(no text)",
+  transcribe: "Transcribe",
   dateHeader: "Date",
   noteHeader: "Note",
   speakersHeader: "Spk.",

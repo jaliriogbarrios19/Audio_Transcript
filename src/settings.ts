@@ -30,9 +30,17 @@ export interface PluginSettings {
   recordingSampleRate: RecordingSampleRate;
   recordingMode: RecordingMode;
   saveAudioAfterTranscription: boolean;
+  openaiApiKey: string;
+  anthropicApiKey: string;
   deepseekApiKey: string;
-  deepseekModel: "deepseek-v4-pro" | "deepseek-v4-flash";
-  llmProvider: LLMProvider;
+  geminiApiKey: string;
+  openrouterApiKey: string;
+  grokApiKey: string;
+  glmApiKey: string;
+  flashProvider: LLMProvider;
+  flashModel: string;
+  advancedProvider: LLMProvider;
+  advancedModel: string;
   promptTemplates: PromptTemplate[];
 }
 
@@ -57,9 +65,17 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   recordingSampleRate: 16000,
   recordingMode: "desktop",
   saveAudioAfterTranscription: true,
+  openaiApiKey: "",
+  anthropicApiKey: "",
   deepseekApiKey: "",
-  deepseekModel: "deepseek-v4-pro",
-  llmProvider: "spob",
+  geminiApiKey: "",
+  openrouterApiKey: "",
+  grokApiKey: "",
+  glmApiKey: "",
+  flashProvider: "spob",
+  flashModel: "deepseek-v4-flash",
+  advancedProvider: "spob",
+  advancedModel: "deepseek-v4-pro",
   promptTemplates: DEFAULT_TEMPLATES,
 };
 

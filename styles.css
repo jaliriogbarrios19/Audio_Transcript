@@ -182,3 +182,13 @@
   margin-top: 8px;
 }
 .at-error { color: var(--text-error); }
+
+.at-mode-label {
+  color: var(--text-muted);
+  font-size: 0.8em;
+  margin-left: 8px;
+}
+.at-mode-active {
+  background: var(--interactive-accent) !important;
+  color: var(--text-on-accent) !important;
+}

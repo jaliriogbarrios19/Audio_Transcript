@@ -2,7 +2,7 @@ import { ItemView, WorkspaceLeaf, Notice, TFile } from "obsidian";
 import type DiaryTranscriberPlugin from "../../main";
 import { scanVault, getCachedEntries } from "./transcription-indexer";
 import { getAll, remove } from "./template-store";
-import { getLLMConfig, chatCompletion } from "./llm-client";
+import { getFlashConfig, getAdvancedConfig, chatCompletion } from "./llm-client";
 import { ChatModal } from "./chat-modal";
 import type { TranscriptionEntry } from "../types";
 import { t, type LocaleStrings } from "../locales";
@@ -43,13 +43,7 @@ export class DashboardView extends ItemView {
     container.empty();
     container.addClass("at-dashboard");
 
-    const config = getLLMConfig(
-      this.plugin.settings.llmProvider,
-      this.plugin.settings.spobBaseUrl,
-      this.plugin.settings.spobApiKey,
-      this.plugin.settings.deepseekApiKey,
-      this.plugin.settings.deepseekModel
-    );
+    const config = getFlashConfig(this.plugin.settings) || getAdvancedConfig(this.plugin.settings);
 
     if (!config) {
       this.renderNoProvider(container);
@@ -57,7 +51,7 @@ export class DashboardView extends ItemView {
     }
 
     this.entries = (await scanVault(this.plugin.app)) ?? getCachedEntries() ?? [];
-    this.renderDashboard(container, config);
+    this.renderDashboard(container);
   }
 
   private renderNoProvider(container: HTMLElement) {
@@ -70,16 +64,19 @@ export class DashboardView extends ItemView {
     });
   }
 
-  private async renderDashboard(container: HTMLElement, config: ReturnType<typeof getLLMConfig>) {
+  private async renderDashboard(container: HTMLElement) {
+    const flashCfg = getFlashConfig(this.plugin.settings);
+    const advCfg = getAdvancedConfig(this.plugin.settings);
+
     let credits = "—";
-    if (this.plugin.settings.llmProvider === "spob" && config) {
+    if (flashCfg && flashCfg.baseUrl.includes("spob-backend")) {
       try {
-        const res = await fetch(`${config.baseUrl}/me`, {
-          headers: { Authorization: `Bearer ${config.apiKey}` },
+        const res = await fetch(`${flashCfg.baseUrl}/me`, {
+          headers: { Authorization: `Bearer ${flashCfg.apiKey}` },
         });
         if (res.ok) {
           const data = (await res.json()) as { credits?: number };
-          credits = data.credits != null ? `$${data.credits.toFixed(2)}` : "—";
+          credits = data.credits != null ? `$${Number(data.credits).toFixed(2)}` : "—";
         }
       } catch { /* offline or unreachable */ }
     }
@@ -90,13 +87,13 @@ export class DashboardView extends ItemView {
 
     const kpiGrid = container.createDiv({ cls: "at-kpi-grid" });
     this.addKPI(kpiGrid, this.L("credit"),
-      this.plugin.settings.llmProvider === "spob" ? credits : this.L("deepseekDirect"),
-      this.plugin.settings.llmProvider === "spob" ? "positive" : "neutral"
+      (this.plugin.settings.flashProvider === "spob" || this.plugin.settings.advancedProvider === "spob") ? credits : this.L("deepseekDirect"),
+      (this.plugin.settings.flashProvider === "spob" || this.plugin.settings.advancedProvider === "spob") ? "positive" : "neutral"
     );
     this.addKPI(kpiGrid, this.L("transcriptions"), String(this.entries.length), "neutral");
     this.addKPI(kpiGrid, this.L("templates"), String(templates.length), "neutral");
     this.addKPI(kpiGrid, this.L("aiProvider"),
-      this.plugin.settings.llmProvider === "spob" ? "spob" : "DeepSeek",
+      `${flashCfg ? "Flash: " + flashCfg.model : "—"} / ${advCfg ? "Adv: " + advCfg.model : "—"}`,
       "neutral"
     );
 
@@ -175,13 +172,7 @@ export class DashboardView extends ItemView {
   }
 
   private async summarizeEntry(entry: TranscriptionEntry) {
-    const config = getLLMConfig(
-      this.plugin.settings.llmProvider,
-      this.plugin.settings.spobBaseUrl,
-      this.plugin.settings.spobApiKey,
-      this.plugin.settings.deepseekApiKey,
-      this.plugin.settings.deepseekModel
-    );
+    const config = getFlashConfig(this.plugin.settings) || getAdvancedConfig(this.plugin.settings);
     if (!config) {
       new Notice(this.L("configLLM"));
       return;

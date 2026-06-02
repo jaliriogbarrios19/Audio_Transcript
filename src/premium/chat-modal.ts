@@ -2,7 +2,7 @@ import { Modal, Notice } from "obsidian";
 import type DiaryTranscriberPlugin from "../../main";
 import { getCachedEntries, scanVault } from "./transcription-indexer";
 import { getAll } from "./template-store";
-import { getLLMConfig, chatCompletion } from "./llm-client";
+import { getFlashConfig, getAdvancedConfig, chatCompletion } from "./llm-client";
 import type { ChatMessage, TranscriptionEntry } from "../types";
 import { t, type LocaleStrings } from "../locales";
 
@@ -10,6 +10,7 @@ export class ChatModal extends Modal {
   plugin: DiaryTranscriberPlugin;
   private selectedEntries: TranscriptionEntry[] = [];
   private templatePrompt = "";
+  private mode: "flash" | "advanced" = "flash";
 
   constructor(app: import("obsidian").App, plugin: DiaryTranscriberPlugin) {
     super(app);
@@ -23,6 +24,7 @@ export class ChatModal extends Modal {
   async onOpen() {
     this.selectedEntries = [];
     this.templatePrompt = "";
+    this.mode = "flash";
 
     const { contentEl } = this;
     contentEl.empty();
@@ -30,23 +32,36 @@ export class ChatModal extends Modal {
 
     contentEl.createEl("h2", { text: this.L("chatTitle") });
 
-    const config = getLLMConfig(
-      this.plugin.settings.llmProvider,
-      this.plugin.settings.spobBaseUrl,
-      this.plugin.settings.spobApiKey,
-      this.plugin.settings.deepseekApiKey,
-      this.plugin.settings.deepseekModel
-    );
+    const flashCfg = getFlashConfig(this.plugin.settings);
+    const advCfg = getAdvancedConfig(this.plugin.settings);
 
-    if (!config) {
+    if (!flashCfg && !advCfg) {
       contentEl.createEl("p", { text: this.L("chatNoConfig") });
       return;
     }
+
+    // Mode tabs
+    const modeRow = contentEl.createDiv({ cls: "at-actions", attr: { style: "margin-bottom:12px;" } });
+    const flashBtn = modeRow.createEl("button", { text: "⚡ Flash" });
+    const advBtn = modeRow.createEl("button", { text: "🧠 Advanced" });
+    const modeLabel = modeRow.createSpan({ cls: "at-mode-label" });
+
+    const updateModeUI = () => {
+      flashBtn.className = this.mode === "flash" ? "at-mode-active" : "";
+      advBtn.className = this.mode === "advanced" ? "at-mode-active" : "";
+      const cfg = this.mode === "flash" ? flashCfg : advCfg;
+      modeLabel.setText(cfg ? `${cfg.model}` : "Sin configurar");
+    };
+
+    flashBtn.onclick = () => { this.mode = "flash"; updateModeUI(); };
+    advBtn.onclick = () => { this.mode = "advanced"; updateModeUI(); };
+    updateModeUI();
 
     let entries = getCachedEntries();
     if (!entries) {
       entries = await scanVault(this.plugin.app);
     }
+
     const templates = getAll(this.plugin.settings.promptTemplates);
 
     // Context selector
@@ -69,6 +84,7 @@ export class ChatModal extends Modal {
       }
     }
 
+    // Template dropdown
     contentEl.createEl("h4", { text: this.L("templateSection") });
     const templateDropdown = contentEl.createEl("select", { cls: "at-template-dropdown" });
     templateDropdown.createEl("option", { text: this.L("freePrompt"), value: "" });
@@ -107,6 +123,16 @@ export class ChatModal extends Modal {
         return;
       }
 
+      const config = this.mode === "flash" ? flashCfg : advCfg;
+      const provider = this.mode === "flash"
+        ? this.plugin.settings.flashProvider
+        : this.plugin.settings.advancedProvider;
+
+      if (!config) {
+        new Notice(`Modo ${this.mode} no configurado. Revisa Settings → IA.`);
+        return;
+      }
+
       sendBtn.disabled = true;
       sendBtn.setText(this.L("sending"));
       responseArea.style.display = "block";
@@ -114,8 +140,7 @@ export class ChatModal extends Modal {
 
       try {
         const messages = this.buildMessages(userText);
-
-        const res = await chatCompletion(config, messages);
+        const res = await chatCompletion(config, messages, provider);
 
         responseArea.empty();
         responseArea.createEl("p", { text: res.content });
@@ -126,7 +151,7 @@ export class ChatModal extends Modal {
       } catch (err) {
         responseArea.empty();
         responseArea.createEl("p", {
-          text: `Error: ${err instanceof Error ? err.message : "desconocido"}`,
+          text: `Error: ${err instanceof Error ? err.message : this.L("unknownError")}`,
           cls: "at-error",
         });
       } finally {

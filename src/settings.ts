@@ -1,6 +1,6 @@
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type DiaryTranscriberPlugin from "../main";
-import { TranscriptionProvider, RecordingSampleRate, RecordingMode, PROVIDERS, DIARIZATION_WARNING } from "./types";
+import { TranscriptionProvider, RecordingSampleRate, RecordingMode, PROVIDERS, DIARIZATION_WARNING, LLMProvider, PromptTemplate, DEFAULT_TEMPLATES } from "./types";
 import { PROVIDER_REGISTRY } from "./providers/registry";
 import { t, type LocaleStrings } from "./locales";
 import {
@@ -30,6 +30,10 @@ export interface PluginSettings {
   recordingSampleRate: RecordingSampleRate;
   recordingMode: RecordingMode;
   saveAudioAfterTranscription: boolean;
+  deepseekApiKey: string;
+  deepseekModel: "deepseek-v4-pro" | "deepseek-v4-flash";
+  llmProvider: LLMProvider;
+  promptTemplates: PromptTemplate[];
 }
 
 export const DEFAULT_TEMPLATE = "**{speaker}** {time}\n{text}";
@@ -53,6 +57,10 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   recordingSampleRate: 16000,
   recordingMode: "desktop",
   saveAudioAfterTranscription: true,
+  deepseekApiKey: "",
+  deepseekModel: "deepseek-v4-pro",
+  llmProvider: "spob",
+  promptTemplates: DEFAULT_TEMPLATES,
 };
 
 export class SettingsTab extends PluginSettingTab {

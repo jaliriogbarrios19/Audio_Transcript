@@ -69,3 +69,31 @@ export const DIARIZATION_WARNING: Record<TranscriptionProvider, string | null> =
       "Whisper local no tiene diarización de hablantes. La transcripción será un solo bloque de texto.",
     spob: null,
   };
+
+export type LLMProvider = "spob" | "deepseek";
+
+export interface TranscriptionEntry {
+  path: string;
+  noteName: string;
+  date: string;
+  speakerCount: number;
+  preview: string;
+  calloutContent: string;
+}
+
+export interface PromptTemplate {
+  name: string;
+  prompt: string;
+}
+
+export interface ChatMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+export const DEFAULT_TEMPLATES: PromptTemplate[] = [
+  { name: "Resumir", prompt: "Resumí esta transcripción en bullet points." },
+  { name: "Decisiones", prompt: "Extraé las decisiones y acuerdos principales." },
+  { name: "Tareas", prompt: "Identificá las tareas pendientes mencionadas." },
+  { name: "Minuta", prompt: "Redactá una minuta de reunión formal." },
+];

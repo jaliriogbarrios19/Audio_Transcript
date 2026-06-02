@@ -37,8 +37,11 @@ export default class DiaryTranscriberPlugin extends Plugin {
   }
 
   async onload() {
+    console.log("[Audio Transcript] onload: starting");
     await this.loadSettings();
+    console.log("[Audio Transcript] onload: settings loaded, provider =", this.settings.provider);
     this.addSettingTab(new SettingsTab(this.app, this));
+    console.log("[Audio Transcript] onload: settings tab registered");
 
     this.addRibbonIcon("mic", "Transcribir", async () => {
       const view = this.app.workspace.getActiveViewOfType(MarkdownView);

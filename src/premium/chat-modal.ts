@@ -21,6 +21,9 @@ export class ChatModal extends Modal {
   }
 
   async onOpen() {
+    this.selectedEntries = [];
+    this.templatePrompt = "";
+
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("at-chat-modal");

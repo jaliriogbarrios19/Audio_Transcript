@@ -46,9 +46,9 @@ function parseTranscription(
       continue;
     }
     if (inCallout) {
-      if (line.startsWith("> ")) {
-        calloutLines.push(line.slice(2));
-      } else if (line === ">" || line === "") {
+      if (line.startsWith(">")) {
+        calloutLines.push(line.replace(/^>\s?/, ""));
+      } else if (line === "") {
         continue;
       } else {
         inCallout = false;

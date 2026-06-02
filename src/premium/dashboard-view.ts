@@ -1,8 +1,9 @@
-import { ItemView, WorkspaceLeaf, Notice } from "obsidian";
+import { ItemView, WorkspaceLeaf, Notice, TFile } from "obsidian";
 import type DiaryTranscriberPlugin from "../../main";
 import { scanVault, getCachedEntries } from "./transcription-indexer";
 import { getAll, remove } from "./template-store";
-import { getLLMConfig } from "./llm-client";
+import { getLLMConfig, chatCompletion } from "./llm-client";
+import { ChatModal } from "./chat-modal";
 import type { TranscriptionEntry } from "../types";
 
 export const VIEW_TYPE_DASHBOARD = "at-dashboard";
@@ -101,7 +102,7 @@ export class DashboardView extends ItemView {
     const actions = container.createDiv({ cls: "at-actions" });
     const chatBtn = actions.createEl("button", { text: "Nuevo chat" });
     chatBtn.onclick = () => {
-      new Notice("Chat disponible en la proxima actualizacion");
+      new ChatModal(this.plugin.app, this.plugin).open();
     };
     const refreshBtn = actions.createEl("button", { text: "Refrescar" });
     refreshBtn.onclick = () => this.refresh();
@@ -117,7 +118,7 @@ export class DashboardView extends ItemView {
       const table = container.createEl("table", { cls: "at-table" });
       const thead = table.createEl("thead");
       const headerRow = thead.createEl("tr");
-      for (const h of ["Fecha", "Nota", "Hab.", "Vista previa"]) {
+      for (const h of ["Fecha", "Nota", "Hab.", "Vista previa", ""]) {
         headerRow.createEl("th", { text: h });
       }
       const tbody = table.createEl("tbody");
@@ -135,6 +136,11 @@ export class DashboardView extends ItemView {
         };
         row.createEl("td", { text: String(entry.speakerCount) });
         row.createEl("td", { text: entry.preview, cls: "at-preview" });
+        const actionCell = row.createEl("td");
+        const summarizeBtn = actionCell.createEl("button", {
+          text: "Resumir",
+        });
+        summarizeBtn.onclick = () => this.summarizeEntry(entry);
       }
     }
 
@@ -155,6 +161,45 @@ export class DashboardView extends ItemView {
         await this.plugin.saveSettings();
         this.refresh();
       };
+    }
+  }
+
+  private async summarizeEntry(entry: TranscriptionEntry) {
+    const config = getLLMConfig(
+      this.plugin.settings.llmProvider,
+      this.plugin.settings.spobBaseUrl,
+      this.plugin.settings.spobApiKey,
+      this.plugin.settings.deepseekApiKey,
+      this.plugin.settings.deepseekModel
+    );
+    if (!config) {
+      new Notice("Configura un proveedor LLM en Settings.");
+      return;
+    }
+
+    if (entry.calloutContent.includes("(No se detecto voz)")) {
+      new Notice("Nada para resumir");
+      return;
+    }
+
+    new Notice("Generando resumen...");
+    try {
+      const res = await chatCompletion(config, [
+        { role: "system", content: "Resumi esta transcripcion en bullet points concisos." },
+        { role: "user", content: entry.calloutContent },
+      ]);
+
+      const file = this.plugin.app.vault.getAbstractFileByPath(entry.path);
+      if (file instanceof TFile) {
+        const current = await this.plugin.app.vault.read(file);
+        const updated = current + `\n\n### Resumen\n${res.content}\n`;
+        await this.plugin.app.vault.modify(file, updated);
+        new Notice("Resumen listo e insertado en la nota");
+      } else {
+        new Notice("Resumen listo:\n" + res.content);
+      }
+    } catch (err) {
+      new Notice(`Error al resumir: ${err instanceof Error ? err.message : "desconocido"}`);
     }
   }
 

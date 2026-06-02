@@ -25,6 +25,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
   settings!: PluginSettings;
   private activeNotice: Notice | null = null;
   private abortController: AbortController | null = null;
+  private statusBarItemEl: HTMLElement | null = null;
 
   private L(key: keyof LocaleStrings): string {
     return t(key, this.getLocale());
@@ -94,7 +95,8 @@ export default class DiaryTranscriberPlugin extends Plugin {
       callback: () => this.activateDashboard(),
     });
 
-    this.addStatusBarItem().setText(this.getStatusBarText());
+    this.statusBarItemEl = this.addStatusBarItem();
+    this.statusBarItemEl.setText(this.getStatusBarText());
 
     if (this.hasLLMProvider()) {
       this.updateStatusBarCredits();
@@ -253,8 +255,8 @@ export default class DiaryTranscriberPlugin extends Plugin {
       });
       if (res.ok) {
         const data = (await res.json()) as { credits?: number };
-        if (data.credits != null) {
-          this.addStatusBarItem().setText(`spob: $${data.credits.toFixed(2)}`);
+        if (data.credits != null && this.statusBarItemEl) {
+          this.statusBarItemEl.setText(`spob: $${Number(data.credits).toFixed(2)}`);
         }
       }
     } catch { /* offline */ }

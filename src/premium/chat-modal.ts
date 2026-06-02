@@ -1,9 +1,10 @@
 import { Modal, Notice } from "obsidian";
 import type DiaryTranscriberPlugin from "../../main";
-import { getCachedEntries } from "./transcription-indexer";
+import { getCachedEntries, scanVault } from "./transcription-indexer";
 import { getAll } from "./template-store";
 import { getLLMConfig, chatCompletion } from "./llm-client";
 import type { ChatMessage, TranscriptionEntry } from "../types";
+import { t, type LocaleStrings } from "../locales";
 
 export class ChatModal extends Modal {
   plugin: DiaryTranscriberPlugin;
@@ -15,12 +16,16 @@ export class ChatModal extends Modal {
     this.plugin = plugin;
   }
 
-  onOpen() {
+  private L(key: keyof LocaleStrings): string {
+    return t(key, this.plugin.getLocale());
+  }
+
+  async onOpen() {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("at-chat-modal");
 
-    contentEl.createEl("h2", { text: "Chat con IA" });
+    contentEl.createEl("h2", { text: this.L("chatTitle") });
 
     const config = getLLMConfig(
       this.plugin.settings.llmProvider,
@@ -31,18 +36,21 @@ export class ChatModal extends Modal {
     );
 
     if (!config) {
-      contentEl.createEl("p", { text: "Configura un proveedor LLM en Settings para usar el chat." });
+      contentEl.createEl("p", { text: this.L("chatNoConfig") });
       return;
     }
 
-    const entries = getCachedEntries() ?? [];
+    let entries = getCachedEntries();
+    if (!entries) {
+      entries = await scanVault(this.plugin.app);
+    }
     const templates = getAll(this.plugin.settings.promptTemplates);
 
     // Context selector
-    contentEl.createEl("h4", { text: "Contexto (transcripciones)" });
+    contentEl.createEl("h4", { text: this.L("contextSection") });
     const ctxContainer = contentEl.createDiv({ cls: "at-context-selector" });
     if (entries.length === 0) {
-      ctxContainer.createEl("p", { text: "No hay transcripciones. El chat funciona sin contexto.", cls: "at-empty" });
+      ctxContainer.createEl("p", { text: this.L("noTranscriptions"), cls: "at-empty" });
     } else {
       for (const entry of entries) {
         const row = ctxContainer.createDiv({ cls: "at-context-row" });
@@ -58,10 +66,9 @@ export class ChatModal extends Modal {
       }
     }
 
-    // Template dropdown
-    contentEl.createEl("h4", { text: "Template de prompt" });
+    contentEl.createEl("h4", { text: this.L("templateSection") });
     const templateDropdown = contentEl.createEl("select", { cls: "at-template-dropdown" });
-    templateDropdown.createEl("option", { text: "Prompt libre", value: "" });
+    templateDropdown.createEl("option", { text: this.L("freePrompt"), value: "" });
     for (const t of templates) {
       templateDropdown.createEl("option", { text: t.name, value: t.prompt });
     }
@@ -70,10 +77,10 @@ export class ChatModal extends Modal {
     };
 
     // Chat input
-    contentEl.createEl("h4", { text: "Tu mensaje" });
+    contentEl.createEl("h4", { text: this.L("yourMessage") });
     const textarea = contentEl.createEl("textarea", {
       cls: "at-chat-input",
-      attr: { rows: "4", placeholder: "Escribi tu pregunta..." },
+      attr: { rows: "4", placeholder: this.L("writeMessage") },
     }) as HTMLTextAreaElement;
     textarea.style.width = "100%";
 
@@ -85,22 +92,22 @@ export class ChatModal extends Modal {
     // Actions
     const btnRow = contentEl.createDiv({ cls: "at-actions", attr: { style: "margin-top:12px;" } });
     const sendBtn = btnRow.createEl("button", {
-      text: "Enviar",
+      text: this.L("send"),
       cls: "at-send-btn",
     });
-    btnRow.createEl("button", { text: "Cerrar" }).onclick = () => this.close();
+    btnRow.createEl("button", { text: this.L("close") }).onclick = () => this.close();
 
     sendBtn.onclick = async () => {
       const userText = textarea.value.trim();
       if (!userText) {
-        new Notice("Escribi un mensaje");
+        new Notice(this.L("writeMessage"));
         return;
       }
 
       sendBtn.disabled = true;
-      sendBtn.setText("Enviando...");
+      sendBtn.setText(this.L("sending"));
       responseArea.style.display = "block";
-      responseArea.setText("Pensando...");
+      responseArea.setText(this.L("thinking"));
 
       try {
         const messages = this.buildMessages(userText);
@@ -121,7 +128,7 @@ export class ChatModal extends Modal {
         });
       } finally {
         sendBtn.disabled = false;
-        sendBtn.setText("Enviar");
+        sendBtn.setText(this.L("send"));
       }
     };
   }

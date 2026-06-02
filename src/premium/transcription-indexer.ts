@@ -12,9 +12,13 @@ export async function scanVault(app: App): Promise<TranscriptionEntry[]> {
   const entries: TranscriptionEntry[] = [];
 
   for (const file of files) {
-    const content = await app.vault.cachedRead(file);
-    const entry = parseTranscription(file, content);
-    if (entry) entries.push(entry);
+    try {
+      const content = await app.vault.cachedRead(file);
+      const entry = parseTranscription(file, content);
+      if (entry) entries.push(entry);
+    } catch {
+      continue;
+    }
   }
 
   entries.sort(
@@ -45,10 +49,9 @@ function parseTranscription(
       if (line.startsWith("> ")) {
         calloutLines.push(line.slice(2));
       } else if (line === ">" || line === "") {
-        // empty line within callout
         continue;
       } else {
-        break;
+        inCallout = false;
       }
     }
   }
@@ -77,7 +80,7 @@ function parseTranscription(
     noteName: file.basename,
     date: date || file.basename,
     speakerCount: speakers.size || 1,
-    preview: previewText || "(transcripcion sin texto)",
+    preview: previewText || "",
     calloutContent: calloutLines.join("\n"),
   };
 }

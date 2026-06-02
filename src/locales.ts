@@ -50,6 +50,36 @@ export interface LocaleStrings {
   sampleRate44kHz: string;
   saveAudioLabel: string;
   saveAudioDesc: string;
+  dashboardTitle: string;
+  noLLMConfig: string;
+  noLLMConfigHint: string;
+  credit: string;
+  transcriptions: string;
+  templates: string;
+  aiProvider: string;
+  newChat: string;
+  refreshBtn: string;
+  history: string;
+  historyEmpty: string;
+  summarize: string;
+  generatingSummary: string;
+  summaryDone: string;
+  summaryInserted: string;
+  nothingToSummarize: string;
+  configLLM: string;
+  chatTitle: string;
+  chatNoConfig: string;
+  contextSection: string;
+  noTranscriptions: string;
+  templateSection: string;
+  freePrompt: string;
+  yourMessage: string;
+  send: string;
+  sending: string;
+  close: string;
+  thinking: string;
+  writeMessage: string;
+  previewNoText: string;
 }
 
 const es: LocaleStrings = {
@@ -112,6 +142,37 @@ const es: LocaleStrings = {
   saveAudioLabel: "Guardar audio después de transcribir",
   saveAudioDesc:
     "Desmarcalo para audios largos. El audio se descarta después de la transcripción.",
+  dashboardTitle: "Audio Transcript — Dashboard",
+  noLLMConfig:
+    "Activá un proveedor LLM en Settings para desbloquear resúmenes y chat con IA.",
+  noLLMConfigHint: "Settings → Audio Transcript → IA (Proveedor LLM)",
+  credit: "Crédito",
+  transcriptions: "Transcripciones",
+  templates: "Templates",
+  aiProvider: "Proveedor IA",
+  newChat: "Nuevo chat",
+  refreshBtn: "Refrescar",
+  history: "Historial de transcripciones",
+  historyEmpty: "No hay transcripciones todavía. Grabá o transcribí un audio para empezar.",
+  summarize: "Resumir",
+  generatingSummary: "Generando resumen...",
+  summaryDone: "Resumen listo",
+  summaryInserted: "Resumen listo e insertado en la nota",
+  nothingToSummarize: "Nada para resumir",
+  configLLM: "Configurá un proveedor LLM en Settings.",
+  chatTitle: "Chat con IA",
+  chatNoConfig: "Configurá un proveedor LLM en Settings para usar el chat.",
+  contextSection: "Contexto (transcripciones)",
+  noTranscriptions: "No hay transcripciones. El chat funciona sin contexto.",
+  templateSection: "Template de prompt",
+  freePrompt: "Prompt libre",
+  yourMessage: "Tu mensaje",
+  send: "Enviar",
+  sending: "Enviando...",
+  close: "Cerrar",
+  thinking: "Pensando...",
+  writeMessage: "Escribí tu pregunta...",
+  previewNoText: "(sin texto)",
 };
 
 const en: LocaleStrings = {
@@ -173,6 +234,37 @@ const en: LocaleStrings = {
   saveAudioLabel: "Save audio after transcription",
   saveAudioDesc:
     "Uncheck for long recordings. Audio is discarded after transcription.",
+  dashboardTitle: "Audio Transcript — Dashboard",
+  noLLMConfig:
+    "Enable an LLM provider in Settings to unlock summaries and AI chat.",
+  noLLMConfigHint: "Settings → Audio Transcript → AI (LLM Provider)",
+  credit: "Credit",
+  transcriptions: "Transcriptions",
+  templates: "Templates",
+  aiProvider: "AI Provider",
+  newChat: "New chat",
+  refreshBtn: "Refresh",
+  history: "Transcription history",
+  historyEmpty: "No transcriptions yet. Record or transcribe audio to get started.",
+  summarize: "Summarize",
+  generatingSummary: "Generating summary...",
+  summaryDone: "Summary ready",
+  summaryInserted: "Summary ready and inserted into note",
+  nothingToSummarize: "Nothing to summarize",
+  configLLM: "Configure an LLM provider in Settings.",
+  chatTitle: "AI Chat",
+  chatNoConfig: "Configure an LLM provider in Settings to use the chat.",
+  contextSection: "Context (transcriptions)",
+  noTranscriptions: "No transcriptions found. Chat works without context.",
+  templateSection: "Prompt template",
+  freePrompt: "Free prompt",
+  yourMessage: "Your message",
+  send: "Send",
+  sending: "Sending...",
+  close: "Close",
+  thinking: "Thinking...",
+  writeMessage: "Type your question...",
+  previewNoText: "(no text)",
 };
 
 export const LOCALES: Record<string, LocaleStrings> = { es, en };

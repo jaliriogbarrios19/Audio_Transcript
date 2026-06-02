@@ -49,8 +49,10 @@ export class ChatModal extends Modal {
     const updateModeUI = () => {
       flashBtn.className = this.mode === "flash" ? "at-mode-active" : "";
       advBtn.className = this.mode === "advanced" ? "at-mode-active" : "";
-      const cfg = this.mode === "flash" ? flashCfg : advCfg;
-      modeLabel.setText(cfg ? `${cfg.model}` : "Sin configurar");
+      const cfg = this.mode === "flash"
+        ? getFlashConfig(this.plugin.settings)
+        : getAdvancedConfig(this.plugin.settings);
+      modeLabel.setText(cfg ? cfg.model : "Sin configurar");
     };
 
     flashBtn.onclick = () => { this.mode = "flash"; updateModeUI(); };

@@ -42,7 +42,11 @@
 }
 
 /* Dashboard */
-.at-dashboard { padding: 16px; }
+.at-dashboard {
+  padding: 16px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  letter-spacing: 0.01em;
+}
 
 .at-header {
   background: linear-gradient(135deg, var(--interactive-accent), var(--text-accent));

@@ -55,7 +55,7 @@ export class DashboardView extends ItemView {
     }
 
     const transcribeBtn = container.createEl("button", {
-      text: "🎤 " + this.L("recordAudio"),
+      text: "🎤 " + this.L("transcribe"),
       cls: "at-transcribe-btn",
     });
     transcribeBtn.onclick = async () => {

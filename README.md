@@ -1,6 +1,6 @@
 # Audio Transcript
 
-Record or transcribe audio files directly in Obsidian with speaker diarization — know who said what. Supports Gladia, Deepgram, AssemblyAI, OpenAI Whisper, Groq, and local Whisper.
+Record or transcribe audio files directly in Obsidian with speaker diarization and AI-powered summaries. Know who said what — and what it means.
 
 [![PayPal](https://img.shields.io/badge/PayPal-Donate-blue?logo=paypal)](https://paypal.me/jesusgarciapsi)
 
@@ -9,11 +9,37 @@ Record or transcribe audio files directly in Obsidian with speaker diarization �
 1. Install from **Community Plugins** → search "Audio Transcript"
 2. Enable it in Settings → Community Plugins
 3. Open Settings → Audio Transcript, pick a provider, paste your API key
-4. Open a note, click the 🎙️ ribbon icon, and record or pick a file
+4. Open the dashboard (📊 ribbon icon) or click the 🎙️ ribbon to record
 
 The plugin auto-detects your Obsidian language. No manual language setting needed.
 
-## Providers
+## Dashboard & AI (v0.6.0)
+
+Open the dashboard via the 📊 ribbon icon or `Ctrl+P` → "Abrir dashboard de transcripciones".
+
+- **Transcription history** — all your past transcriptions indexed automatically
+- **AI Chat** — chat with your transcriptions as context, powered by 8 LLM providers
+- **One-click summaries** — summarize any transcription with AI, inserted directly into the note
+- **Prompt templates** — create, edit, and reuse your own prompts
+- **Flash / Advanced modes** — choose different models for fast vs deep analysis
+- **Status bar** — live spob credits display
+
+### LLM Providers
+
+Configure your LLM in Settings → Audio Transcript → IA (Proveedores LLM):
+
+| Provider | Requires API key |
+|----------|-----------------|
+| OpenAI (GPT-5.x) | Yes |
+| Anthropic Claude | Yes |
+| DeepSeek | Yes |
+| Google Gemini | Yes |
+| OpenRouter | Yes |
+| Grok (xAI) | Yes |
+| GLM (Z.ai) | Yes |
+| Smart Plugins Obsidian (spob) | Yes — [get one here](https://spob-backend.fly.dev) |
+
+## Transcription Providers
 
 | Provider | Diarization | Free tier | Get API key |
 |----------|-------------|-----------|-------------|
@@ -38,6 +64,9 @@ The plugin auto-detects your Obsidian language. No manual language setting neede
 - **Timestamps with audio links** — click a timestamp to jump to that moment in the saved audio
 - **Callout wrapping** — output inside a foldable `> [!transcription]` block
 - **Auto language detection** — matches your Obsidian UI language (Spanish or English)
+- **Provider fallback** — if one API fails, the plugin tries the next configured provider automatically
+- **Audio preservation** — recordings are saved before transcription, never lost on API failure
+- **Dashboard & AI** — transcription history, AI chat, summaries, and prompt templates (see above)
 
 ## How it works
 

@@ -1,7 +1,8 @@
 import { ItemView, WorkspaceLeaf, Notice, TFile, Modal, Setting } from "obsidian";
 import type DiaryTranscriberPlugin from "../../main";
 import { scanVault, getCachedEntries } from "./transcription-indexer";
-import { getAll, remove } from "./template-store";
+import { getAll, remove, update } from "./template-store";
+import { DEFAULT_TEMPLATES } from "../types";
 import { getFlashConfig, getAdvancedConfig, chatCompletion } from "./llm-client";
 import { ChatModal } from "./chat-modal";
 import type { TranscriptionEntry } from "../types";
@@ -150,19 +151,25 @@ export class DashboardView extends ItemView {
     addBtn.onclick = () => this.addTemplate();
     for (let i = 0; i < templates.length; i++) {
       const t = templates[i];
+      const isDefault = i < DEFAULT_TEMPLATES.length;
       const row = tl.createDiv({ cls: "at-template-row" });
-      row.createSpan({ text: t.name, cls: "at-template-name" });
+      row.createSpan({ text: (isDefault ? "📌 " : "") + t.name, cls: "at-template-name" });
       row.createSpan({ text: t.prompt.slice(0, 60) + (t.prompt.length > 60 ? "..." : ""), cls: "at-template-preview" });
-      const dBtn = row.createEl("button", { text: "×" });
-      delBtns.push(dBtn);
-      dBtn.onclick = async () => {
-        for (const b of delBtns) b.disabled = true;
-        try {
-          this.plugin.settings.promptTemplates = remove(this.plugin.settings.promptTemplates, i);
-          await this.plugin.saveSettings();
-          await this.refresh();
-        } catch { for (const b of delBtns) b.disabled = false; }
-      };
+      if (!isDefault) {
+        const customIdx = i - DEFAULT_TEMPLATES.length;
+        const editBtn = row.createEl("button", { text: "✎" });
+        editBtn.onclick = () => this.editTemplate(customIdx, t);
+        const dBtn = row.createEl("button", { text: "×" });
+        delBtns.push(dBtn);
+        dBtn.onclick = async () => {
+          for (const b of delBtns) b.disabled = true;
+          try {
+            this.plugin.settings.promptTemplates = remove(this.plugin.settings.promptTemplates, customIdx);
+            await this.plugin.saveSettings();
+            await this.refresh();
+          } catch { for (const b of delBtns) b.disabled = false; }
+        };
+      }
     }
   }
 
@@ -192,6 +199,19 @@ export class DashboardView extends ItemView {
     } catch (err) {
       new Notice(`${this.L("summaryError")}: ${err instanceof Error ? err.message : this.L("unknownError")}`);
     }
+  }
+
+  private async editTemplate(customIdx: number, current: import("../types").PromptTemplate) {
+    new AddTemplateModal(this.plugin.app, async (name, prompt) => {
+      this.plugin.settings.promptTemplates = update(
+        this.plugin.settings.promptTemplates,
+        customIdx,
+        name,
+        prompt
+      );
+      await this.plugin.saveSettings();
+      await this.refresh();
+    }, current.name, current.prompt).open();
   }
 
   private async addTemplate() {
@@ -224,25 +244,34 @@ export class DashboardView extends ItemView {
 
 class AddTemplateModal extends Modal {
   private onSubmit: (name: string, prompt: string) => void;
+  private defaultName: string;
+  private defaultPrompt: string;
 
-  constructor(app: import("obsidian").App, onSubmit: (name: string, prompt: string) => void) {
+  constructor(
+    app: import("obsidian").App,
+    onSubmit: (name: string, prompt: string) => void,
+    defaultName = "",
+    defaultPrompt = ""
+  ) {
     super(app);
     this.onSubmit = onSubmit;
+    this.defaultName = defaultName;
+    this.defaultPrompt = defaultPrompt;
   }
 
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.createEl("h3", { text: "Nuevo template" });
+    contentEl.createEl("h3", { text: this.defaultName ? "Editar template" : "Nuevo template" });
 
-    let name = "";
-    let prompt = "";
+    let name = this.defaultName;
+    let prompt = this.defaultPrompt;
 
     new Setting(contentEl).setName("Nombre").addText((t) => {
-      t.setPlaceholder("Ej: Minuta de reunion").onChange((v) => (name = v));
+      t.setValue(this.defaultName).setPlaceholder("Ej: Minuta de reunion").onChange((v) => (name = v));
     });
     new Setting(contentEl).setName("Prompt").addTextArea((t) => {
-      t.setPlaceholder("Instruccion para el LLM...").onChange((v) => (prompt = v));
+      t.setValue(this.defaultPrompt).setPlaceholder("Instruccion para el LLM...").onChange((v) => (prompt = v));
       t.inputEl.rows = 4;
       t.inputEl.style.width = "100%";
     });

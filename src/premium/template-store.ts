@@ -4,7 +4,7 @@ import { DEFAULT_TEMPLATES } from "../types";
 export function getAll(
   templates: PromptTemplate[]
 ): PromptTemplate[] {
-  return templates.length > 0 ? templates : DEFAULT_TEMPLATES;
+  return [...DEFAULT_TEMPLATES, ...templates];
 }
 
 export function add(

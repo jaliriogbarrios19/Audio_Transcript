@@ -53,7 +53,6 @@ export class ChatModal extends Modal {
         ? getFlashConfig(this.plugin.settings)
         : getAdvancedConfig(this.plugin.settings);
       const label = cfg ? cfg.model : "Sin configurar";
-      console.log("[Audio Transcript] mode:", this.mode, "model:", label);
       modeLabel.empty();
       modeLabel.createSpan({ text: label });
     };

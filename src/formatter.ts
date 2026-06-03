@@ -29,7 +29,7 @@ export function formatTranscription(
   if (insertAsCallout) {
     return (
       "> [!transcription]- Transcription\n" +
-      lines.map((l) => `> ${l}`).join("\n>\n")
+      lines.map((l) => `> ${l.replace(/\n/g, "\n> ")}`).join("\n>\n")
     );
   }
 

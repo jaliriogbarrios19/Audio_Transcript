@@ -48,10 +48,10 @@ function parseTranscription(
     if (inCallout) {
       if (line.startsWith(">")) {
         calloutLines.push(line.replace(/^>\s?/, ""));
-      } else if (line === "") {
-        continue;
-      } else {
+      } else if (line.trim() === "" || line.startsWith("#")) {
         inCallout = false;
+      } else {
+        calloutLines.push(line);
       }
     }
   }

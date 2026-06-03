@@ -235,7 +235,7 @@
   font-size: 0.8em;
   margin-left: 8px;
 }
-.at-mode-active {
-  background: var(--interactive-accent) !important;
-  color: var(--text-on-accent) !important;
+.at-chat-modal .at-mode-active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
 }

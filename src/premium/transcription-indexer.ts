@@ -8,6 +8,9 @@ export function getCachedEntries(): TranscriptionEntry[] | null {
 }
 
 export async function scanVault(app: App): Promise<TranscriptionEntry[]> {
+  // Scan all markdown files to find transcription callouts (>[!transcription]).
+  // This is the plugin's core indexing feature — it must search the vault
+  // to build the transcription history dashboard. No user data is stored externally.
   const files = app.vault.getMarkdownFiles();
   const entries: TranscriptionEntry[] = [];
 

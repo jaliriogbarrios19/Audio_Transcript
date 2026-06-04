@@ -97,29 +97,6 @@ export class ChatModal extends Modal {
         ? allEntries.filter((e) => e.noteName.toLowerCase().includes(filter.toLowerCase()))
         : allEntries;
 
-      if (filter) {
-        const vaultNotes = this.plugin.app.vault.getMarkdownFiles()
-          .filter((f) => f.basename.toLowerCase().includes(filter.toLowerCase()))
-          .filter((f) => !allEntries.some((e) => e.path === f.path));
-        for (const f of vaultNotes.slice(0, 10)) {
-          const row = ctxContainer.createDiv({ cls: "at-context-row" });
-          const cb = row.createEl("input", { type: "checkbox" });
-          row.createSpan({ text: `📄 ${f.basename}` });
-          cb.onchange = async () => {
-            if (cb.checked) {
-              const content = await this.plugin.app.vault.cachedRead(f);
-              this.selectedEntries.push({
-                path: f.path, noteName: f.basename, date: "",
-                speakerCount: 0, preview: content.slice(0, 120),
-                calloutContent: content,
-              });
-            } else {
-              this.selectedEntries = this.selectedEntries.filter((e) => e.path !== f.path);
-            }
-          };
-        }
-      }
-
       if (filtered.length === 0 && !filter) {
         ctxContainer.createEl("p", { text: this.L("noTranscriptions"), cls: "at-empty" });
       }

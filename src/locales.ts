@@ -90,6 +90,7 @@ export interface LocaleStrings {
   summarySystemPrompt: string;
   summaryError: string;
   unknownError: string;
+  spobBanner: string;
 }
 
 const es: LocaleStrings = {
@@ -193,6 +194,7 @@ const es: LocaleStrings = {
   summarySystemPrompt: "Resumí esta transcripción en bullet points concisos.",
   summaryError: "Error al resumir",
   unknownError: "desconocido",
+  spobBanner: "Hola, soy Jesús García, un psicólogo que se ha interesado en el desarrollo web para optimizar sus flujos de trabajo. Si deseas apoyar nuestro trabajo, puedes hacer una donación o utilizar nuestros servicios a un costo razonable.",
 };
 
 const en: LocaleStrings = {
@@ -295,6 +297,7 @@ const en: LocaleStrings = {
   summarySystemPrompt: "Summarize this transcription in concise bullet points.",
   summaryError: "Summary error",
   unknownError: "unknown",
+  spobBanner: "Hi, I'm Jesús García, a psychologist who became interested in web development to optimize my workflows and now uses Obsidian comprehensively across the different roles of my daily life. If you'd like to support our work, you can make a donation or use our services at a reasonable cost.",
 };
 
 export const LOCALES: Record<string, LocaleStrings> = { es, en };

@@ -1,6 +1,6 @@
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type DiaryTranscriberPlugin from "../main";
-import { TranscriptionProvider, RecordingSampleRate, RecordingMode, PROVIDERS, DIARIZATION_WARNING, LLMProvider, PromptTemplate, DEFAULT_TEMPLATES } from "./types";
+import { TranscriptionProvider, RecordingSampleRate, RecordingMode, PROVIDERS, DIARIZATION_WARNING, LLMProvider, PromptTemplate, DEFAULT_TEMPLATES, ChatSession } from "./types";
 import { PROVIDER_REGISTRY } from "./providers/registry";
 import { t, type LocaleStrings } from "./locales";
 import {
@@ -42,6 +42,7 @@ export interface PluginSettings {
   advancedProvider: LLMProvider;
   advancedModel: string;
   promptTemplates: PromptTemplate[];
+  chatHistory: ChatSession[];
 }
 
 export const DEFAULT_TEMPLATE = "**{speaker}** {time}\n{text}";
@@ -77,6 +78,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   advancedProvider: "spob",
   advancedModel: "deepseek-v4-pro",
   promptTemplates: DEFAULT_TEMPLATES,
+  chatHistory: [],
 };
 
 export class SettingsTab extends PluginSettingTab {

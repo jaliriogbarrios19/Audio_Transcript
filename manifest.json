@@ -1,7 +1,7 @@
 {
   "id": "audio-transcript",
   "name": "Audio Transcript",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "minAppVersion": "1.5.0",
   "description": "Transcribe audios con identificación de hablantes usando Gladia, Deepgram o AssemblyAI.",
   "author": "Jesús García y DeepSeek V4-Pro (with Opencode and Gentle AI)",

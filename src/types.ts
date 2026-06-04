@@ -158,9 +158,76 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface ChatSession {
+  id: string;
+  timestamp: number;
+  title: string;
+  mode: "flash" | "advanced";
+  messages: ChatMessage[];
+}
+
+export const CHAT_HISTORY_LIMIT = 20;
+
 export const DEFAULT_TEMPLATES: PromptTemplate[] = [
-  { name: "Resumir", prompt: "Resumí esta transcripción en bullet points." },
-  { name: "Decisiones", prompt: "Extraé las decisiones y acuerdos principales." },
-  { name: "Tareas", prompt: "Identificá las tareas pendientes mencionadas." },
-  { name: "Minuta", prompt: "Redactá una minuta de reunión formal." },
+  {
+    name: "Resumir",
+    prompt: `Redactá un resumen profesional con esta estructura:
+
+## Resumen Ejecutivo
+[Sintesis de 2-3 oraciones del contenido]
+
+## Puntos Clave
+- Punto principal 1
+- Punto principal 2
+
+## Temas Tratados
+1. **Tema**: descripcion breve
+2. **Tema**: descripcion breve
+
+## Conclusiones
+- Conclusion principal
+
+Usa lenguaje formal y objetivo.`,
+  },
+  { name: "Decisiones", prompt: "Extrae las decisiones y acuerdos principales en formato de lista con viñetas. Agrupalas por tema si aplica." },
+  {
+    name: "Tareas",
+    prompt: `Identifica las tareas pendientes mencionadas. Usa este formato:
+
+## Tareas Pendientes
+- [ ] **Tarea**: responsable (si se menciona), plazo (si se menciona)
+
+## Seguimiento
+- Notas adicionales sobre cada tarea si las hay`,
+  },
+  {
+    name: "Minuta",
+    prompt: `Redacta una minuta de reunion formal con esta estructura:
+
+## Minuta de Reunion
+**Fecha**: [fecha si se menciona]
+**Participantes**: [nombres si se mencionan]
+
+## Agenda
+1. Tema tratado
+2. Tema tratado
+
+## Desarrollo
+### Tema 1
+[Resumen de la discusion]
+
+### Tema 2
+[Resumen de la discusion]
+
+## Decisiones
+- Decision 1
+- Decision 2
+
+## Tareas y Responsables
+| Tarea | Responsable | Plazo |
+|-------|-------------|-------|
+| | | |
+
+Usa lenguaje formal. Si falta algun dato, indica "No especificado".`,
+  },
 ];

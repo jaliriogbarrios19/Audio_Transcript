@@ -1,16 +1,25 @@
-import { Modal, Notice } from "obsidian";
+import { MarkdownRenderer, Modal, Notice } from "obsidian";
 import type DiaryTranscriberPlugin from "../../main";
 import { getCachedEntries, scanVault } from "./transcription-indexer";
 import { getAll } from "./template-store";
 import { getFlashConfig, getAdvancedConfig, chatCompletion } from "./llm-client";
-import type { ChatMessage, TranscriptionEntry } from "../types";
+import type { ChatMessage, ChatSession, TranscriptionEntry } from "../types";
 import { t, type LocaleStrings } from "../locales";
+import { createHistoryStore, generateSessionId, buildSessionTitle, showHistoryModal } from "./chat-history";
 
 export class ChatModal extends Modal {
   plugin: DiaryTranscriberPlugin;
   private selectedEntries: TranscriptionEntry[] = [];
   private templatePrompt = "";
   private mode: "flash" | "advanced" = "flash";
+  private sessionMessages: ChatMessage[] = [];
+  private sessionId = "";
+  private get historyStore() {
+    return createHistoryStore(
+      () => this.plugin.settings.chatHistory,
+      (h) => { this.plugin.settings.chatHistory = h; this.plugin.saveSettings(); }
+    );
+  }
 
   constructor(app: import("obsidian").App, plugin: DiaryTranscriberPlugin) {
     super(app);
@@ -25,6 +34,8 @@ export class ChatModal extends Modal {
     this.selectedEntries = [];
     this.templatePrompt = "";
     this.mode = "flash";
+    this.sessionMessages = [];
+    this.sessionId = generateSessionId();
 
     const { contentEl } = this;
     contentEl.empty();
@@ -156,6 +167,8 @@ export class ChatModal extends Modal {
       text: this.L("send"),
       cls: "at-send-btn",
     });
+    const historyBtn = btnRow.createEl("button", { text: "📋 Historial" });
+    historyBtn.onclick = () => showHistoryModal(this.app, this.historyStore, (s) => this.loadSession(s));
     btnRow.createEl("button", { text: this.L("close") }).onclick = () => this.close();
 
     sendBtn.onclick = async () => {
@@ -184,12 +197,25 @@ export class ChatModal extends Modal {
         const messages = this.buildMessages(userText);
         const res = await chatCompletion(config, messages, provider);
 
+        this.sessionMessages.push(
+          { role: "user", content: userText },
+          { role: "assistant", content: res.content }
+        );
+
         responseArea.empty();
-        responseArea.createEl("p", { text: res.content });
+        await MarkdownRenderer.render(
+          this.app,
+          res.content,
+          responseArea,
+          "",
+          this.plugin
+        );
         responseArea.createEl("p", {
           text: `${res.usage.prompt_tokens}P + ${res.usage.completion_tokens}C tokens`,
           cls: "at-cost-info",
         });
+
+        this.saveSession();
       } catch (err) {
         responseArea.empty();
         responseArea.createEl("p", {
@@ -224,5 +250,45 @@ export class ChatModal extends Modal {
 
     messages.push({ role: "user", content: userText });
     return messages;
+  }
+
+  private saveSession() {
+    if (this.sessionMessages.length === 0) return;
+    this.historyStore.save({
+      id: this.sessionId,
+      timestamp: Date.now(),
+      title: buildSessionTitle(this.sessionMessages),
+      mode: this.mode,
+      messages: [...this.sessionMessages],
+    });
+  }
+
+  private loadSession(session: ChatSession) {
+    this.sessionId = session.id;
+    this.mode = session.mode;
+    this.sessionMessages = [...session.messages];
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.addClass("at-chat-modal");
+    contentEl.createEl("h2", { text: this.L("chatTitle") });
+    contentEl.createEl("p", {
+      text: `Modo: ${this.mode === "flash" ? "⚡ Flash" : "🧠 Advanced"}`,
+      cls: "at-cost-info",
+    });
+    const chatLog = contentEl.createDiv({ cls: "at-chat-history-log" });
+    for (const msg of this.sessionMessages) {
+      if (msg.role === "user") {
+        chatLog.createEl("p", { text: `🙂 ${msg.content}`, cls: "at-chat-user-msg" });
+      } else {
+        const div = chatLog.createDiv({ cls: "at-chat-assistant-msg" });
+        div.createEl("strong", { text: "🤖" });
+        MarkdownRenderer.render(this.app, msg.content, div.createDiv(), "", this.plugin);
+      }
+    }
+    contentEl.createEl("button", { text: "← Volver al chat" }).onclick = () => {
+      contentEl.empty();
+      contentEl.addClass("at-chat-modal");
+      this.onOpen();
+    };
   }
 }

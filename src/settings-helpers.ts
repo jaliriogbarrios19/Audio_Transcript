@@ -77,12 +77,8 @@ export function addModelField(
 }
 
 export function getVaultFolders(app: App): string[] {
-  return app.vault
-    .getAllLoadedFiles()
-    .filter(
-      (f): f is TFolder =>
-        f instanceof TFolder && !f.isRoot() && !f.name.startsWith(".")
-    )
+  return app.vault.getRoot().children
+    .filter((f): f is TFolder => f instanceof TFolder && !f.name.startsWith("."))
     .map((f) => f.path)
     .sort();
 }

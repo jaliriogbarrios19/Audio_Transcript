@@ -1,3 +1,4 @@
+import { requestUrl } from "obsidian";
 import type { ChatMessage, LLMProvider } from "../types";
 import type { PluginSettings } from "../settings";
 
@@ -69,7 +70,8 @@ async function chatOpenAICompat(
   config: LLMConfig,
   messages: ChatMessage[]
 ): Promise<{ content: string; usage: { prompt_tokens: number; completion_tokens: number } }> {
-  const res = await fetch(`${config.baseUrl}/v1/chat/completions`, {
+  const res = await requestUrl({
+    url: `${config.baseUrl}/v1/chat/completions`,
     method: "POST",
     headers: {
       Authorization: `Bearer ${config.apiKey}`,
@@ -78,12 +80,12 @@ async function chatOpenAICompat(
     body: JSON.stringify({ model: config.model, messages }),
   });
 
-  if (!res.ok) {
-    const err = await res.text().catch(() => "");
-    throw new Error(`LLM request failed (${res.status}): ${err.slice(0, 200)}`);
+  if (res.status < 200 || res.status >= 300) {
+    const err = res.text.slice(0, 200);
+    throw new Error(`LLM request failed (${res.status}): ${err}`);
   }
 
-  const data = (await res.json()) as {
+  const data = res.json as {
     choices?: { message?: { content?: string } }[];
     usage?: { prompt_tokens: number; completion_tokens: number };
   };
@@ -98,7 +100,8 @@ async function chatAnthropic(
   config: LLMConfig,
   messages: ChatMessage[]
 ): Promise<{ content: string; usage: { prompt_tokens: number; completion_tokens: number } }> {
-  const res = await fetch(`${config.baseUrl}/v1/messages`, {
+  const res = await requestUrl({
+    url: `${config.baseUrl}/v1/messages`,
     method: "POST",
     headers: {
       "x-api-key": config.apiKey,
@@ -112,12 +115,12 @@ async function chatAnthropic(
     }),
   });
 
-  if (!res.ok) {
-    const err = await res.text().catch(() => "");
-    throw new Error(`Anthropic failed (${res.status}): ${err.slice(0, 200)}`);
+  if (res.status < 200 || res.status >= 300) {
+    const err = res.text.slice(0, 200);
+    throw new Error(`Anthropic failed (${res.status}): ${err}`);
   }
 
-  const data = (await res.json()) as {
+  const data = res.json as {
     content?: { text?: string }[];
     usage?: { input_tokens: number; output_tokens: number };
   };
@@ -138,18 +141,19 @@ async function chatGemini(
   const url = `${config.baseUrl}/v1beta/models/${config.model}:generateContent?key=${config.apiKey}`;
   const prompt = messages.map((m) => m.content).join("\n");
 
-  const res = await fetch(url, {
+  const res = await requestUrl({
+    url,
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
   });
 
-  if (!res.ok) {
-    const err = await res.text().catch(() => "");
-    throw new Error(`Gemini failed (${res.status}): ${err.slice(0, 200)}`);
+  if (res.status < 200 || res.status >= 300) {
+    const err = res.text.slice(0, 200);
+    throw new Error(`Gemini failed (${res.status}): ${err}`);
   }
 
-  const data = (await res.json()) as {
+  const data = res.json as {
     candidates?: { content?: { parts?: { text?: string }[] } }[];
     usageMetadata?: { promptTokenCount: number; candidatesTokenCount: number };
   };

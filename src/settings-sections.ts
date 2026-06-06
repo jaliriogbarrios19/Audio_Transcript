@@ -1,5 +1,5 @@
 import { App, Setting } from "obsidian";
-import type { PluginSettings, DEFAULT_TEMPLATE as _DT } from "./settings";
+import type { PluginSettings, DEFAULT_TEMPLATE } from "./settings";
 import type { RecordingSampleRate, RecordingMode, LLMProvider } from "./types";
 import { LLM_PROVIDERS, LLM_MODELS, API_KEY_FIELDS } from "./types";
 import type { LocaleStrings } from "./locales";
@@ -91,7 +91,7 @@ export function buildCommonSections(
           await saveSettings();
         });
       text.inputEl.rows = 3;
-      text.inputEl.style.width = "100%";
+      text.inputEl.setCssProps({ width: "100%" });
     });
 
   new Setting(containerEl)

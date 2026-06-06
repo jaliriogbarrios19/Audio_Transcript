@@ -85,8 +85,8 @@ export class ChatModal extends Modal {
     const searchInput = contentEl.createEl("input", {
       cls: "at-search-input",
       attr: { placeholder: "Buscar nota por nombre...", type: "text" },
-    }) as HTMLInputElement;
-    searchInput.style.cssText = "width:100%;margin-bottom:8px;padding:6px;border-radius:4px;";
+    });
+    searchInput.setCssProps({ width: "100%", marginBottom: "8px", padding: "6px", borderRadius: "4px" });
 
     const ctxContainer = contentEl.createDiv({ cls: "at-context-selector" });
 
@@ -127,16 +127,19 @@ export class ChatModal extends Modal {
 
     // Response area (above input)
     const responseArea = contentEl.createDiv({ cls: "at-chat-response" });
-    responseArea.style.cssText =
-      "margin-bottom:12px;padding:12px;background:var(--background-secondary);border-radius:6px;min-height:40px;display:none;";
+    responseArea.setCssProps({
+      marginBottom: "12px", padding: "12px",
+      background: "var(--background-secondary)", borderRadius: "6px",
+      minHeight: "40px", display: "none",
+    });
 
     // Chat input
     contentEl.createEl("h4", { text: this.L("yourMessage") });
     const textarea = contentEl.createEl("textarea", {
       cls: "at-chat-input",
       attr: { rows: "4", placeholder: this.L("writeMessage") },
-    }) as HTMLTextAreaElement;
-    textarea.style.width = "100%";
+    });
+    textarea.setCssProps({ width: "100%" });
 
     // Actions
     const btnRow = contentEl.createDiv({ cls: "at-actions", attr: { style: "margin-top:12px;" } });
@@ -167,7 +170,7 @@ export class ChatModal extends Modal {
 
       sendBtn.disabled = true;
       sendBtn.setText(this.L("sending"));
-      responseArea.style.display = "block";
+      responseArea.setCssProps({ display: "block" });
       responseArea.setText(this.L("thinking"));
 
       try {
@@ -185,7 +188,7 @@ export class ChatModal extends Modal {
           res.content,
           responseArea,
           "",
-          this.plugin
+          ""
         );
         responseArea.createEl("p", {
           text: `${res.usage.prompt_tokens}P + ${res.usage.completion_tokens}C tokens`,
@@ -259,7 +262,7 @@ export class ChatModal extends Modal {
       } else {
         const div = chatLog.createDiv({ cls: "at-chat-assistant-msg" });
         div.createEl("strong", { text: "🤖" });
-        MarkdownRenderer.render(this.app, msg.content, div.createDiv(), "", this.plugin);
+        MarkdownRenderer.render(this.app, msg.content, div.createDiv(), "", "");
       }
     }
     contentEl.createEl("button", { text: "← Volver al chat" }).onclick = () => {

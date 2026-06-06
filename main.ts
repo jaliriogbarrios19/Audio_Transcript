@@ -3,7 +3,9 @@ import {
   MarkdownFileInfo,
   MarkdownView,
   Notice,
+  Platform,
   Plugin,
+  requestUrl,
   TFile,
   moment,
 } from "obsidian";
@@ -46,7 +48,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
         new Notice(this.L("openNoteFirst"));
         return;
       }
-      const choice = await new ChoiceModal(this.app, this.getLocale()).open();
+      const choice = await new ChoiceModal(this.app, this.getLocale()).prompt();
       if (choice === "record") {
         this.startRecording(view.editor);
       } else if (choice === "file") {
@@ -93,14 +95,16 @@ export default class DiaryTranscriberPlugin extends Plugin {
     this.addCommand({
       id: "open-dashboard",
       name: "Abrir dashboard de transcripciones",
-      callback: () => this.activateDashboard(),
+      callback: () => {
+        void this.activateDashboard();
+      },
     });
 
     this.statusBarItemEl = this.addStatusBarItem();
     this.statusBarItemEl.setText(this.getStatusBarText());
 
     if (this.hasLLMProvider()) {
-      this.updateStatusBarCredits();
+      void this.updateStatusBarCredits();
     }
   }
 
@@ -110,7 +114,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
   }
 
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData()) as PluginSettings;
     setSpobBaseUrl(this.settings.spobBaseUrl || "http://localhost:8080");
   }
 
@@ -172,7 +176,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
       const mapping = await new SpeakerModal(
         this.app,
         this.getLocale()
-      ).open();
+      ).prompt();
       if (!mapping) return;
       speakerMapping = mapping;
     } else {
@@ -181,11 +185,11 @@ export default class DiaryTranscriberPlugin extends Plugin {
 
     const total = files.length;
     const notice = new Notice("", 0);
-    const noticeEl = notice.noticeEl;
-    const titleEl = noticeEl.createDiv({
+    const messageEl = notice.messageEl;
+    const titleEl = messageEl.createDiv({
       text: `Transcribiendo 0/${total}...`,
     });
-    const progressBar = noticeEl.createDiv({
+    const progressBar = messageEl.createDiv({
       attr: {
         style:
           "width:100%;height:4px;background:var(--background-modifier-border);margin-top:4px;border-radius:2px;",
@@ -209,7 +213,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
         );
         completed++;
         titleEl.textContent = `Transcribiendo ${completed}/${total}...`;
-        progressFill.style.width = `${Math.round((completed / total) * 100)}%`;
+        progressFill.setCssProps({ width: `${Math.round((completed / total) * 100)}%` });
       } catch (err) {
         completed++;
         console.error(
@@ -227,20 +231,25 @@ export default class DiaryTranscriberPlugin extends Plugin {
     const { workspace } = this.app;
     let leaf = workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD)[0];
     if (!leaf) {
-      const rightLeaf = workspace.getRightLeaf(false);
-      if (rightLeaf) {
-        await rightLeaf.setViewState({ type: VIEW_TYPE_DASHBOARD, active: true });
-        leaf = rightLeaf;
+      if (Platform.isMobile) {
+        leaf = workspace.getLeaf(true);
+        await leaf.setViewState({ type: VIEW_TYPE_DASHBOARD, active: true });
+      } else {
+        const rightLeaf = workspace.getRightLeaf(false);
+        if (rightLeaf) {
+          await rightLeaf.setViewState({ type: VIEW_TYPE_DASHBOARD, active: true });
+          leaf = rightLeaf;
+        }
       }
     }
-    if (leaf) workspace.revealLeaf(leaf);
+    if (leaf) workspace.setActiveLeaf(leaf, { focus: true });
   }
 
   async transcribeFromDashboard(): Promise<void> {
     const choice = await new ChoiceModal(this.app, this.getLocale()).open();
     if (!choice) return;
 
-    const note = await this.ensurePluginNote();
+    await this.ensurePluginNote();
     const view = this.app.workspace.getActiveViewOfType(MarkdownView);
     const editor = view?.editor;
     if (!editor) {
@@ -301,11 +310,12 @@ export default class DiaryTranscriberPlugin extends Plugin {
     if (!spobActive || !s.spobApiKey) return;
     try {
       const baseUrl = s.spobBaseUrl || "https://spob-backend.fly.dev";
-      const res = await fetch(`${baseUrl}/me`, {
+      const res = await requestUrl({
+        url: `${baseUrl}/me`,
         headers: { Authorization: `Bearer ${s.spobApiKey}` },
       });
-      if (res.ok) {
-        const data = (await res.json()) as { credits?: number };
+      if (res.status >= 200 && res.status < 300) {
+        const data = res.json as { credits?: number };
         if (data.credits != null && this.statusBarItemEl) {
           this.statusBarItemEl.setText(`spob: $${Number(data.credits).toFixed(4)}`);
         }

@@ -22,9 +22,10 @@ export class AssemblyAITranscriber implements Transcriber {
     };
 
     const buffer = await audioBlob.arrayBuffer();
+    const contentType = audioBlob.type || "application/octet-stream";
     const uploadRes = await requestUrlWithSignal(`${this.baseUrl}/v2/upload`, {
       method: "POST",
-      headers: { authorization: apiKey },
+      headers: { authorization: apiKey, "content-type": contentType },
       body: buffer,
       signal,
     });

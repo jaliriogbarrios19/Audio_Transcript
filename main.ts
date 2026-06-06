@@ -307,7 +307,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
       if (res.ok) {
         const data = (await res.json()) as { credits?: number };
         if (data.credits != null && this.statusBarItemEl) {
-          this.statusBarItemEl.setText(`spob: $${Number(data.credits).toFixed(2)}`);
+          this.statusBarItemEl.setText(`spob: $${Number(data.credits).toFixed(4)}`);
         }
       }
     } catch { /* offline */ }

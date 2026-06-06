@@ -16,7 +16,7 @@ export async function requestUrlWithSignal(
   }
 ): Promise<RequestUrlResult> {
   const { signal, ...rest } = options;
-  const params: RequestUrlParam = { url, ...rest };
+  const params = { url, ...rest } as RequestUrlParam;
   if (!signal) return requestUrl(params);
   return Promise.race([
     requestUrl(params),

@@ -20,6 +20,7 @@ import { SpeakerModal } from "./src/speaker-modal";
 import { ChoiceModal } from "./src/choice-modal";
 import { pickAudioFile, pickMultipleAudioFiles } from "./src/file-picker";
 import { runTranscription } from "./src/transcription-runner";
+import { autoSummarizeContent } from "./src/premium/auto-summarize";
 import { SpeakerMapping } from "./src/types";
 import { DashboardView, VIEW_TYPE_DASHBOARD } from "./src/premium/dashboard-view";
 import { t, type LocaleStrings } from "./src/locales";
@@ -329,6 +330,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
     speakerMapping?: SpeakerMapping,
     skipSpeakerModal = false
   ) {
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
     await runTranscription(
       {
         app: this.app,
@@ -337,6 +339,9 @@ export default class DiaryTranscriberPlugin extends Plugin {
         abortRef: { current: this.abortController },
         getLocale: () => this.getLocale(),
         insertAtCursor: (ed, text) => this.insertAtCursor(ed, text),
+        onComplete: (content, sourcePath) =>
+          autoSummarizeContent(this.app, this.settings, content, sourcePath, this.getLocale()),
+        sourcePath: view?.file?.path ?? "",
       },
       editor,
       blob,

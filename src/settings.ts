@@ -173,15 +173,16 @@ export class SettingsTab extends PluginSettingTab {
         .setName("Probar conexion")
         .setDesc(`Verifica que la API key de ${meta.label} funciona`)
         .addButton((btn) =>
-          btn.setButtonText("Probar").onClick(() => { void (async () => {
+          btn.setButtonText("Probar").onClick(() => {
             btn.setDisabled(true);
             btn.setButtonText("Probando...");
             const key = this.plugin.settings[meta.apiKeyField] as string;
-            const ok = await testApiKey(meta.testEndpoint!, meta.id, key);
-            btn.setButtonText(ok ? "✓ Conectado" : "✗ Fallo");
-            btn.setDisabled(false);
-            window.setTimeout(() => btn.setButtonText("Probar"), 3000);
-          })(); })
+            void testApiKey(meta.testEndpoint!, meta.id, key).then((ok) => {
+              btn.setButtonText(ok ? "✓ Conectado" : "✗ Fallo");
+              btn.setDisabled(false);
+              window.setTimeout(() => btn.setButtonText("Probar"), 3000);
+            });
+          })
         );
     }
 

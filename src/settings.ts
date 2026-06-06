@@ -177,11 +177,14 @@ export class SettingsTab extends PluginSettingTab {
             btn.setDisabled(true);
             btn.setButtonText("Probando...");
             const key = this.plugin.settings[meta.apiKeyField] as string;
-            testApiKey(meta.testEndpoint!, meta.id, key).then((ok) => {
-              btn.setButtonText(ok ? "✓ Conectado" : "✗ Fallo");
-              btn.setDisabled(false);
-              window.setTimeout(() => btn.setButtonText("Probar"), 3000);
-            });
+            testApiKey(meta.testEndpoint!, meta.id, key)
+              .then((ok) => {
+                btn.setButtonText(ok ? "✓ Conectado" : "✗ Fallo");
+                btn.setDisabled(false);
+                window.setTimeout(() => btn.setButtonText("Probar"), 3000);
+              })
+              .catch(() => {});
+            return false;
           })
         );
     }

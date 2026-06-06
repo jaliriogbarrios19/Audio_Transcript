@@ -1,4 +1,4 @@
-import { requestUrl } from "obsidian";
+import { requestUrl, type RequestUrlParam } from "obsidian";
 
 export interface RequestUrlResult {
   status: number;
@@ -16,9 +16,10 @@ export async function requestUrlWithSignal(
   }
 ): Promise<RequestUrlResult> {
   const { signal, ...rest } = options;
-  if (!signal) return requestUrl({ url, ...rest });
+  const params: RequestUrlParam = { url, ...rest };
+  if (!signal) return requestUrl(params);
   return Promise.race([
-    requestUrl({ url, ...rest }),
+    requestUrl(params),
     new Promise<never>((_, reject) => {
       if (signal.aborted) reject(new DOMException("Aborted", "AbortError"));
       signal.addEventListener(

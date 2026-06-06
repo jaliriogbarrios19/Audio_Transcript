@@ -1,8 +1,6 @@
-import { activeDocument } from "obsidian";
-
 export function pickMultipleAudioFiles(): Promise<File[] | null> {
   return new Promise((resolve) => {
-    const input = activeDocument.createElement("input");
+    const input = document.createElement("input");
     input.type = "file";
     input.accept = "audio/*";
     input.multiple = true;
@@ -50,7 +48,7 @@ export function pickMultipleAudioFiles(): Promise<File[] | null> {
 
 export function pickAudioFile(): Promise<File | null> {
   return new Promise((resolve) => {
-    const input = activeDocument.createElement("input");
+    const input = document.createElement("input");
     input.type = "file";
     input.accept = "audio/*";
 

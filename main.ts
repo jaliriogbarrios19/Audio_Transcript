@@ -246,7 +246,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
   }
 
   async transcribeFromDashboard(): Promise<void> {
-    const choice = await new ChoiceModal(this.app, this.getLocale()).open();
+    const choice = await new ChoiceModal(this.app, this.getLocale()).prompt();
     if (!choice) return;
 
     await this.ensurePluginNote();

@@ -188,7 +188,7 @@ export class ChatModal extends Modal {
           res.content,
           responseArea,
           "",
-          ""
+          this
         );
         responseArea.createEl("p", {
           text: `${res.usage.prompt_tokens}P + ${res.usage.completion_tokens}C tokens`,
@@ -262,7 +262,7 @@ export class ChatModal extends Modal {
       } else {
         const div = chatLog.createDiv({ cls: "at-chat-assistant-msg" });
         div.createEl("strong", { text: "🤖" });
-        MarkdownRenderer.render(this.app, msg.content, div.createDiv(), "", "");
+        MarkdownRenderer.render(this.app, msg.content, div.createDiv(), "", this);
       }
     }
     contentEl.createEl("button", { text: "← Volver al chat" }).onclick = () => {

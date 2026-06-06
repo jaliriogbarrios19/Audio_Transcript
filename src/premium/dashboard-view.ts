@@ -105,10 +105,9 @@ export class DashboardView extends ItemView {
       "neutral",
       undefined,
       () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const setting: any = this.plugin.app.setting;
-        setting?.open();
-        setting?.openTabById("audio-transcript");
+        const settingApi = (this.plugin.app as any).setting;
+        settingApi?.open();
+        settingApi?.openTabById("audio-transcript");
       }
     );
 

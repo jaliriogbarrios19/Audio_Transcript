@@ -52,7 +52,7 @@ export class DashboardView extends ItemView {
   private renderDashboard(container: HTMLElement, config: ReturnType<typeof getFlashConfig>) {
     const flashCfg = getFlashConfig(this.plugin.settings);
     const advCfg = getAdvancedConfig(this.plugin.settings);
-    const hasSpob = this.plugin.settings.flashProvider === "spob" || this.plugin.settings.advancedProvider === "spob";
+    const hasSpob = this.plugin.settings.provider === "spob" || this.plugin.settings.flashProvider === "spob" || this.plugin.settings.advancedProvider === "spob";
 
     container.createEl("div", { cls: "at-header" }).createEl("h2", {
       text: "🎙️ " + this.L("dashboardTitle"),
@@ -79,13 +79,19 @@ export class DashboardView extends ItemView {
     const kpiGrid = container.createDiv({ cls: "at-kpi-grid" });
     if (hasSpob) {
       this.addKPI(kpiGrid, "💰", this.L("credit"), "—", "positive", async (el) => {
-        const cfg = flashCfg || advCfg;
-        if (cfg) {
+        let spobCfg: { baseUrl: string; apiKey: string } | null = flashCfg || advCfg;
+        if (!spobCfg && this.plugin.settings.provider === "spob" && this.plugin.settings.spobApiKey) {
+          spobCfg = {
+            baseUrl: this.plugin.settings.spobBaseUrl || "https://spob-backend.fly.dev",
+            apiKey: this.plugin.settings.spobApiKey,
+          };
+        }
+        if (spobCfg) {
           try {
-            const res = await fetch(`${cfg.baseUrl}/me`, { headers: { Authorization: `Bearer ${cfg.apiKey}` } });
+            const res = await fetch(`${spobCfg.baseUrl}/me`, { headers: { Authorization: `Bearer ${spobCfg.apiKey}` } });
             if (res.ok) {
               const d = (await res.json()) as { credits?: number };
-              if (d.credits != null) el.setText(`$${Number(d.credits).toFixed(2)}`);
+              if (d.credits != null) el.setText(`$${Number(d.credits).toFixed(4)}`);
             }
           } catch { /* offline */ }
         }

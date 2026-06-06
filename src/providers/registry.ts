@@ -16,6 +16,7 @@ export function getSpobBaseUrl(): string {
 
 export function setSpobBaseUrl(url: string): void {
   spobBaseUrl = url;
+  PROVIDER_REGISTRY.spob.testEndpoint = `${url}/health`;
 }
 
 class SpobTranscriber implements Transcriber {

@@ -105,9 +105,10 @@ export class DashboardView extends ItemView {
       "neutral",
       undefined,
       () => {
-        const settingApi = (this.plugin.app as any).setting;
-        settingApi?.open();
-        settingApi?.openTabById("audio-transcript");
+        // @ts-expect-error — setting API is not in public types
+        this.plugin.app.setting?.open();
+        // @ts-expect-error — setting API is not in public types
+        this.plugin.app.setting?.openTabById("audio-transcript");
       }
     );
 

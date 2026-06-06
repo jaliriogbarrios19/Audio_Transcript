@@ -17,7 +17,7 @@ export class ChatModal extends Modal {
   private get historyStore() {
     return createHistoryStore(
       () => this.plugin.settings.chatHistory,
-      (h) => { this.plugin.settings.chatHistory = h; this.plugin.saveSettings(); }
+      (h) => { this.plugin.settings.chatHistory = h; void this.plugin.saveSettings(); }
     );
   }
 
@@ -262,13 +262,13 @@ export class ChatModal extends Modal {
       } else {
         const div = chatLog.createDiv({ cls: "at-chat-assistant-msg" });
         div.createEl("strong", { text: "🤖" });
-        MarkdownRenderer.render(this.app, msg.content, div.createDiv(), "", this as unknown as Component);
+        void MarkdownRenderer.render(this.app, msg.content, div.createDiv(), "", this as unknown as Component);
       }
     }
     contentEl.createEl("button", { text: "← Volver al chat" }).onclick = () => {
       contentEl.empty();
       contentEl.addClass("at-chat-modal");
-      this.onOpen();
+      void this.onOpen();
     };
   }
 }

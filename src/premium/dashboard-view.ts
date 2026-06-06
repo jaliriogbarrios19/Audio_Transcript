@@ -31,7 +31,7 @@ export class DashboardView extends ItemView {
     this.registerEvent(
       this.plugin.app.workspace.on("active-leaf-change", () => {
         if (this.plugin.app.workspace.getActiveViewOfType(DashboardView)) {
-          this.refresh();
+          void this.refresh();
         }
       })
     );
@@ -136,7 +136,7 @@ export class DashboardView extends ItemView {
         row.createEl("td", { text: entry.date || "—" });
         const nc = row.createEl("td");
         const link = nc.createEl("a", { text: entry.noteName, href: entry.path });
-        link.onclick = (e) => { e.preventDefault(); this.plugin.app.workspace.openLinkText(entry.path, "", false); };
+        link.onclick = (e) => { e.preventDefault(); void this.plugin.app.workspace.openLinkText(entry.path, "", false); };
         row.createEl("td", { text: String(entry.speakerCount) });
         row.createEl("td", { text: entry.preview || this.L("previewNoText"), cls: "at-preview" });
         const ac = row.createEl("td");
@@ -206,7 +206,7 @@ export class DashboardView extends ItemView {
   }
 
   private async editTemplate(customIdx: number, current: import("../types").PromptTemplate) {
-    new AddTemplateModal(this.plugin.app, async (name, prompt) => {
+    new AddTemplateModal(this.plugin.app, (name, prompt) => { void (async () => {
       this.plugin.settings.promptTemplates = update(
         this.plugin.settings.promptTemplates,
         customIdx,
@@ -215,18 +215,18 @@ export class DashboardView extends ItemView {
       );
       await this.plugin.saveSettings();
       await this.refresh();
-    }, current.name, current.prompt).open();
+    })(); }, current.name, current.prompt).open();
   }
 
   private async addTemplate() {
-    new AddTemplateModal(this.plugin.app, async (name, prompt) => {
+    new AddTemplateModal(this.plugin.app, (name, prompt) => { void (async () => {
       this.plugin.settings.promptTemplates = [
         ...this.plugin.settings.promptTemplates,
         { name, prompt },
       ];
       await this.plugin.saveSettings();
       await this.refresh();
-    }).open();
+    })(); }).open();
   }
 
   private addKPI(
@@ -242,7 +242,7 @@ export class DashboardView extends ItemView {
     card.createSpan({ text: icon, cls: "at-kpi-icon" });
     card.createEl("h4", { text: label });
     const valEl = card.createEl("p", { text: value, cls: `at-kpi-value ${colorClass}` });
-    if (asyncValue) asyncValue(valEl);
+    if (asyncValue) void asyncValue(valEl);
   }
 }
 

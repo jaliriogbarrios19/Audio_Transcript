@@ -3,11 +3,33 @@ import { t, type LocaleStrings } from "./locales";
 import { encodeWAV } from "./wav-encoder";
 import type { RecordingSampleRate, RecordingMode } from "./types";
 
+const WORKLET_CODE = `
+class RecorderProcessor extends AudioWorkletProcessor {
+  constructor(options) {
+    super(options);
+    this.paused = false;
+    this.port.onmessage = (e) => {
+      if (e.data.paused !== undefined) this.paused = e.data.paused;
+    };
+  }
+  process(inputs) {
+    if (!this.paused) {
+      const input = inputs[0];
+      if (input && input.length > 0 && input[0]) {
+        this.port.postMessage(input[0]);
+      }
+    }
+    return true;
+  }
+}
+registerProcessor('recorder-processor', RecorderProcessor);
+`;
+
 export class RecordingModal extends Modal {
   private stream: MediaStream | null = null;
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
-  private processor: ScriptProcessorNode | null = null;
+  private workletNode: AudioWorkletNode | null = null;
   private pcmChunks: Float32Array[] = [];
   private levelEl: HTMLElement | null = null;
   private levelInterval: number | null = null;
@@ -74,17 +96,20 @@ export class RecordingModal extends Modal {
     this.analyser.fftSize = 256;
     source.connect(this.analyser);
 
-    this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
     this.pcmChunks = [];
 
-    this.processor.onaudioprocess = (e) => {
-      if (this.paused || !this.processor) return;
-      const input = e.inputBuffer.getChannelData(0);
-      this.pcmChunks.push(new Float32Array(input));
+    const blobUrl = URL.createObjectURL(new Blob([WORKLET_CODE], { type: "application/javascript" }));
+    await this.audioContext.audioWorklet.addModule(blobUrl);
+    URL.revokeObjectURL(blobUrl);
+
+    this.workletNode = new AudioWorkletNode(this.audioContext, "recorder-processor");
+    this.workletNode.port.onmessage = (e) => {
+      if (this.paused || !this.workletNode) return;
+      this.pcmChunks.push(new Float32Array(e.data as Float32Array));
     };
 
-    source.connect(this.processor);
-    this.processor.connect(this.audioContext.destination);
+    source.connect(this.workletNode);
+    this.workletNode.connect(this.audioContext.destination);
 
     return new Promise((resolve) => {
       this.resolve = resolve;
@@ -142,14 +167,10 @@ export class RecordingModal extends Modal {
   }
 
   private togglePause() {
-    if (!this.processor) return;
+    if (!this.workletNode) return;
 
     if (this.paused) {
-      this.processor.onaudioprocess = (e) => {
-        if (this.paused || !this.processor) return;
-        const input = e.inputBuffer.getChannelData(0);
-        this.pcmChunks.push(new Float32Array(input));
-      };
+      this.workletNode.port.postMessage({ paused: false });
       this.paused = false;
       if (this.pauseBtn)
         this.pauseBtn.textContent = "⏸ " + this.L("pause");
@@ -157,7 +178,7 @@ export class RecordingModal extends Modal {
         this.statusEl.textContent = "● " + this.L("recording");
       this.timerInterval ?? this.startTimer();
     } else {
-      this.processor.onaudioprocess = null;
+      this.workletNode.port.postMessage({ paused: true });
       this.paused = true;
       if (this.pauseBtn)
         this.pauseBtn.textContent = "▶ " + this.L("resume");
@@ -213,8 +234,8 @@ export class RecordingModal extends Modal {
 
   private stopDesktopRecording() {
     this.stopAudioLevel();
-    this.processor?.disconnect();
-    this.processor = null;
+    this.workletNode?.disconnect();
+    this.workletNode = null;
 
     let blob: Blob;
     if (this.pcmChunks.length > 0) {
@@ -239,7 +260,7 @@ export class RecordingModal extends Modal {
     this.audioContext?.close();
     this.audioContext = null;
     this.analyser = null;
-    this.processor = null;
+    this.workletNode = null;
     this.pcmChunks = [];
     this.mediaRecorder = null;
     this.mobileChunks = [];
@@ -250,7 +271,7 @@ export class RecordingModal extends Modal {
       this.stopMobileRecording();
       return;
     }
-    if (this.processor) {
+    if (this.workletNode) {
       this.stopDesktopRecording();
       return;
     }

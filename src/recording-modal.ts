@@ -176,7 +176,7 @@ export class RecordingModal extends Modal {
         this.pauseBtn.textContent = "⏸ " + this.L("pause");
       if (this.statusEl)
         this.statusEl.textContent = "● " + this.L("recording");
-      this.timerInterval ?? this.startTimer();
+      if (!this.timerInterval) this.startTimer();
     } else {
       this.workletNode.port.postMessage({ paused: true });
       this.paused = true;
@@ -257,7 +257,7 @@ export class RecordingModal extends Modal {
     this.stopAudioLevel();
     this.stream?.getTracks().forEach((t) => t.stop());
     this.stream = null;
-    this.audioContext?.close();
+    void this.audioContext?.close();
     this.audioContext = null;
     this.analyser = null;
     this.workletNode = null;

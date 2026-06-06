@@ -185,11 +185,11 @@ export default class DiaryTranscriberPlugin extends Plugin {
 
     const total = files.length;
     const notice = new Notice("", 0);
-    const messageEl = notice.messageEl;
-    const titleEl = messageEl.createDiv({
+    const noticeEl = notice.noticeEl;
+    const titleEl = noticeEl.createDiv({
       text: `Transcribiendo 0/${total}...`,
     });
-    const progressBar = messageEl.createDiv({
+    const progressBar = noticeEl.createDiv({
       attr: {
         style:
           "width:100%;height:4px;background:var(--background-modifier-border);margin-top:4px;border-radius:2px;",

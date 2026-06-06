@@ -95,7 +95,7 @@ export class SettingsTab extends PluginSettingTab {
     const L = (k: keyof LocaleStrings) => t(k, this.plugin.getLocale());
 
     new Setting(containerEl)
-      .setName("Audio Transcript")
+      .setName("Configuración")
       .setHeading();
 
     this.addSpobBanner(containerEl);
@@ -173,7 +173,7 @@ export class SettingsTab extends PluginSettingTab {
         .setName("Probar conexion")
         .setDesc(`Verifica que la API key de ${meta.label} funciona`)
         .addButton((btn) =>
-          btn.setButtonText("Probar").onClick(async () => {
+          btn.setButtonText("Probar").onClick(() => { void (async () => {
             btn.setDisabled(true);
             btn.setButtonText("Probando...");
             const key = this.plugin.settings[meta.apiKeyField] as string;
@@ -181,7 +181,7 @@ export class SettingsTab extends PluginSettingTab {
             btn.setButtonText(ok ? "✓ Conectado" : "✗ Fallo");
             btn.setDisabled(false);
             window.setTimeout(() => btn.setButtonText("Probar"), 3000);
-          })
+          })(); })
         );
     }
 

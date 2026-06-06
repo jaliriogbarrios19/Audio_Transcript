@@ -1,5 +1,6 @@
 import { Transcriber } from "../transcriber";
 import { Utterance, TranscriptionOptions } from "../types";
+import { requestUrlWithSignal } from "../fetch-utils";
 
 export class GroqTranscriber implements Transcriber {
   readonly name = "Groq (Whisper)";
@@ -19,7 +20,7 @@ export class GroqTranscriber implements Transcriber {
       form.append("language", options.language);
     }
 
-    const res = await fetch(
+    const res = await requestUrlWithSignal(
       "https://api.groq.com/openai/v1/audio/transcriptions",
       {
         method: "POST",
@@ -29,8 +30,8 @@ export class GroqTranscriber implements Transcriber {
       }
     );
 
-    if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as {
+    if (res.status < 200 || res.status >= 300) {
+      const err = res.json as {
         error?: { message?: string };
       } | null;
       throw new Error(
@@ -38,7 +39,7 @@ export class GroqTranscriber implements Transcriber {
       );
     }
 
-    const data = (await res.json()) as {
+    const data = res.json as {
       text: string;
       segments?: Array<{
         start: number;

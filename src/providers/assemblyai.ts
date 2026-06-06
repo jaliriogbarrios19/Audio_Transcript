@@ -1,6 +1,6 @@
 import { Transcriber } from "../transcriber";
 import { Utterance, TranscriptionOptions } from "../types";
-import { fetchWithRetry, sleep } from "../fetch-utils";
+import { requestUrlWithRetry, requestUrlWithSignal, sleep } from "../fetch-utils";
 
 export class AssemblyAITranscriber implements Transcriber {
   readonly name = "AssemblyAI";
@@ -21,26 +21,25 @@ export class AssemblyAITranscriber implements Transcriber {
       "content-type": "application/json",
     };
 
-    // 1. Upload audio
-    const uploadRes = await fetch(`${this.baseUrl}/v2/upload`, {
+    const buffer = await audioBlob.arrayBuffer();
+    const uploadRes = await requestUrlWithSignal(`${this.baseUrl}/v2/upload`, {
       method: "POST",
       headers: { authorization: apiKey },
-      body: audioBlob,
+      body: buffer,
       signal,
     });
 
-    if (!uploadRes.ok) {
-      const body = await uploadRes.text().catch(() => "");
+    if (uploadRes.status < 200 || uploadRes.status >= 300) {
+      const body = uploadRes.text.slice(0, 200);
       throw new Error(
-        `AssemblyAI upload failed (${uploadRes.status}): ${body.slice(0, 200)}`
+        `AssemblyAI upload failed (${uploadRes.status}): ${body}`
       );
     }
 
-    const { upload_url: audioUrl } = (await uploadRes.json()) as {
+    const { upload_url: audioUrl } = uploadRes.json as {
       upload_url: string;
     };
 
-    // 2. Start transcription
     const body: Record<string, unknown> = {
       audio_url: audioUrl,
       speech_models: [options.model || "universal-2"],
@@ -52,7 +51,7 @@ export class AssemblyAITranscriber implements Transcriber {
       body.speakers_expected = options.speakerNames.length;
     }
 
-    const startRes = await fetch(
+    const startRes = await requestUrlWithSignal(
       `${this.baseUrl}/v2/transcript`,
       {
         method: "POST",
@@ -62,16 +61,15 @@ export class AssemblyAITranscriber implements Transcriber {
       }
     );
 
-    if (!startRes.ok) {
-      const body = await startRes.text().catch(() => "");
+    if (startRes.status < 200 || startRes.status >= 300) {
+      const err = startRes.text.slice(0, 200);
       throw new Error(
-        `AssemblyAI transcription request failed (${startRes.status}): ${body.slice(0, 200)}`
+        `AssemblyAI transcription request failed (${startRes.status}): ${err}`
       );
     }
 
-    const { id } = (await startRes.json()) as { id: string };
+    const { id } = startRes.json as { id: string };
 
-    // 3. Poll until done
     return await this.poll(id, apiKey, signal, options.onProgress);
   }
 
@@ -85,7 +83,7 @@ export class AssemblyAITranscriber implements Transcriber {
     for (let i = 0; i < maxAttempts; i++) {
       if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
 
-      const res = await fetchWithRetry(
+      const res = await requestUrlWithRetry(
         `${this.baseUrl}/v2/transcript/${id}`,
         {
           headers: { authorization: apiKey },
@@ -93,11 +91,11 @@ export class AssemblyAITranscriber implements Transcriber {
         }
       );
 
-      if (!res.ok) {
+      if (res.status < 200 || res.status >= 300) {
         throw new Error(`AssemblyAI polling failed (${res.status})`);
       }
 
-      const data = (await res.json()) as AssemblyAIResponse;
+      const data = res.json as AssemblyAIResponse;
 
       onProgress?.(Math.round(((i + 1) / maxAttempts) * 100));
 
@@ -130,7 +128,7 @@ export class AssemblyAITranscriber implements Transcriber {
 interface AssemblyAIUtterance {
   speaker: string;
   text: string;
-  start: number; // ms
+  start: number;
   end: number;
 }
 

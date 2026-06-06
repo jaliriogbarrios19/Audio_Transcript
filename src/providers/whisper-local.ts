@@ -1,5 +1,6 @@
 import { Transcriber } from "../transcriber";
 import { Utterance, TranscriptionOptions } from "../types";
+import { requestUrlWithSignal } from "../fetch-utils";
 
 export class WhisperLocalTranscriber implements Transcriber {
   readonly name = "Whisper (local)";
@@ -18,20 +19,20 @@ export class WhisperLocalTranscriber implements Transcriber {
 
     const url = serverUrl.replace(/\/$/, "") + "/inference";
 
-    const res = await fetch(url, {
+    const res = await requestUrlWithSignal(url, {
       method: "POST",
       body: form,
       signal: options.signal,
     });
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
+    if (res.status < 200 || res.status >= 300) {
+      const text = res.text.slice(0, 200);
       throw new Error(
-        `Whisper local request failed (${res.status}): ${text.slice(0, 200)}`
+        `Whisper local request failed (${res.status}): ${text}`
       );
     }
 
-    const data = (await res.json()) as {
+    const data = res.json as {
       text: string;
       segments?: Array<{
         t0: number;

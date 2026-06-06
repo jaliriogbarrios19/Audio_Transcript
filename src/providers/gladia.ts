@@ -1,6 +1,6 @@
 import { Transcriber } from "../transcriber";
 import { Utterance, TranscriptionOptions } from "../types";
-import { fetchWithRetry, sleep } from "../fetch-utils";
+import { requestUrlWithRetry, requestUrlWithSignal, sleep } from "../fetch-utils";
 
 interface GladiaError {
   statusCode: number;
@@ -39,21 +39,21 @@ export class GladiaTranscriber implements Transcriber {
     const form = new FormData();
     form.append("audio", blob);
 
-    const res = await fetch(`${baseUrl}/upload`, {
+    const res = await requestUrlWithSignal(`${baseUrl}/upload`, {
       method: "POST",
       headers: { "x-gladia-key": apiKey },
       body: form,
       signal,
     });
 
-    if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as GladiaError | null;
+    if (res.status < 200 || res.status >= 300) {
+      const err = res.json as GladiaError | null;
       throw new Error(
         `Gladia upload failed (${res.status}): ${err?.message ?? "unknown"}`
       );
     }
 
-    const data = (await res.json()) as { audio_url: string };
+    const data = res.json as { audio_url: string };
     return data.audio_url;
   }
 
@@ -75,7 +75,7 @@ export class GladiaTranscriber implements Transcriber {
       };
     }
 
-    const res = await fetch(`${baseUrl}/transcription`, {
+    const res = await requestUrlWithSignal(`${baseUrl}/transcription`, {
       method: "POST",
       headers: {
         "x-gladia-key": apiKey,
@@ -85,14 +85,14 @@ export class GladiaTranscriber implements Transcriber {
       signal: options.signal,
     });
 
-    if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as GladiaError | null;
+    if (res.status < 200 || res.status >= 300) {
+      const err = res.json as GladiaError | null;
       throw new Error(
         `Gladia transcription request failed (${res.status}): ${err?.message ?? "unknown"}`
       );
     }
 
-    const data = (await res.json()) as { id: string; result_url: string };
+    const data = res.json as { id: string; result_url: string };
     return data.result_url;
   }
 
@@ -106,16 +106,16 @@ export class GladiaTranscriber implements Transcriber {
     for (let i = 0; i < maxAttempts; i++) {
       if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
 
-      const res = await fetchWithRetry(resultUrl, {
+      const res = await requestUrlWithRetry(resultUrl, {
         headers: { "x-gladia-key": apiKey },
         signal,
       });
 
-      if (!res.ok) {
+      if (res.status < 200 || res.status >= 300) {
         throw new Error(`Gladia polling failed (${res.status})`);
       }
 
-      const data = (await res.json()) as {
+      const data = res.json as {
         status: string;
         result?: {
           transcription?: {

@@ -50,9 +50,9 @@ export default class DiaryTranscriberPlugin extends Plugin {
       }
       const choice = await new ChoiceModal(this.app, this.getLocale()).prompt();
       if (choice === "record") {
-        this.startRecording(view.editor);
+        void this.startRecording(view.editor);
       } else if (choice === "file") {
-        this.transcribeFile(view.editor);
+        void this.transcribeFile(view.editor);
       }
     });
 
@@ -89,7 +89,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
     );
 
     this.addRibbonIcon("layout-dashboard", "Dashboard de transcripciones", () => {
-      this.activateDashboard();
+      void this.activateDashboard();
     });
 
     this.addCommand({
@@ -185,11 +185,11 @@ export default class DiaryTranscriberPlugin extends Plugin {
 
     const total = files.length;
     const notice = new Notice("", 0);
-    const noticeEl = notice.noticeEl;
-    const titleEl = noticeEl.createDiv({
+    const messageEl = notice.messageEl;
+    const titleEl = messageEl.createDiv({
       text: `Transcribiendo 0/${total}...`,
     });
-    const progressBar = noticeEl.createDiv({
+    const progressBar = messageEl.createDiv({
       attr: {
         style:
           "width:100%;height:4px;background:var(--background-modifier-border);margin-top:4px;border-radius:2px;",

@@ -7,6 +7,7 @@ import { getFlashConfig, getAdvancedConfig, chatCompletion } from "./llm-client"
 import { ChatModal } from "./chat-modal";
 import type { TranscriptionEntry } from "../types";
 import { t, type LocaleStrings } from "../locales";
+import { TranscriptionSearchModal } from "./transcription-search";
 
 export const VIEW_TYPE_DASHBOARD = "at-dashboard";
 
@@ -133,7 +134,7 @@ export class DashboardView extends ItemView {
         hr.createEl("th", { text: h });
       }
       const tbody = table.createEl("tbody");
-      for (const entry of this.entries) {
+      for (const entry of this.entries.slice(0, 5)) {
         const row = tbody.createEl("tr", { cls: "at-clickable-row" });
         row.createEl("td", { text: entry.date || "—" });
         const nc = row.createEl("td");
@@ -145,6 +146,15 @@ export class DashboardView extends ItemView {
         const sBtn = ac.createEl("button", { text: this.L("summarize") });
         sBtn.onclick = async () => { sBtn.disabled = true; await this.summarizeEntry(entry); sBtn.disabled = false; };
       }
+    }
+
+    if (this.entries.length > 5) {
+      const searchBtn = container.createEl("button", {
+        text: "🔍 Buscar transcripciones",
+        cls: "mod-cta",
+      });
+      searchBtn.setCssProps({ marginTop: "8px", width: "100%" });
+      searchBtn.onclick = () => new TranscriptionSearchModal(this.plugin.app, this.entries).open();
     }
 
     // Templates

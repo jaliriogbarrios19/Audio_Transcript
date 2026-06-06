@@ -100,7 +100,7 @@ export async function runTranscription(
   if (speakerMapping) {
     resolvedMapping = speakerMapping;
   } else if (primaryMeta.supportsDiarization) {
-    const mapping = await new SpeakerModal(deps.app, deps.getLocale()).open();
+    const mapping = await new SpeakerModal(deps.app, deps.getLocale()).prompt();
     if (!mapping) return;
     resolvedMapping = mapping;
   } else {
@@ -152,7 +152,7 @@ export async function runTranscription(
       if (meta.requiresApiKey && !apiKey) continue;
 
       statusEl.textContent = `${L("transcribing")} ${meta.label}...`;
-      progressFill.style.width = "0%";
+      progressFill.setCssProps({ width: "0%" });
 
       try {
         const utterances = await meta.transcriber.transcribe(blob, apiKey, {

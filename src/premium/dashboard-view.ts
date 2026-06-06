@@ -105,11 +105,10 @@ export class DashboardView extends ItemView {
       "neutral",
       undefined,
       () => {
-        (this.plugin as any).app.setting?.open();
-        const settingTab = (this.plugin as any).app.setting?.pluginTabs?.find(
-          (t: any) => t.id === "audio-transcript"
-        );
-        if (settingTab) (this.plugin as any).app.setting?.openTabById("audio-transcript");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const setting: any = this.plugin.app.setting;
+        setting?.open();
+        setting?.openTabById("audio-transcript");
       }
     );
 
@@ -238,7 +237,7 @@ export class DashboardView extends ItemView {
   ) {
     const card = container.createDiv({ cls: "at-kpi-card" });
     if (onClick) {
-      card.style.cursor = "pointer";
+      card.setCssProps({ cursor: "pointer" });
       card.onclick = onClick;
     }
     card.createSpan({ text: icon, cls: "at-kpi-icon" });
@@ -279,7 +278,7 @@ class AddTemplateModal extends Modal {
     new Setting(contentEl).setName("Prompt").addTextArea((t) => {
       t.setValue(this.defaultPrompt).setPlaceholder("Instruccion para el LLM...").onChange((v) => (prompt = v));
       t.inputEl.rows = 4;
-      t.inputEl.style.width = "100%";
+      t.inputEl.setCssProps({ width: "100%" });
     });
 
     const btnRow = contentEl.createDiv({ cls: "at-actions", attr: { style: "margin-top:12px;" } });

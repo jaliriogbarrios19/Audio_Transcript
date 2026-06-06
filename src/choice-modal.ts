@@ -14,7 +14,11 @@ export class ChoiceModal extends Modal {
     return t(key, this.locale);
   }
 
-  open(): Promise<"record" | "file" | null> {
+  open(): void {
+    super.open();
+  }
+
+  prompt(): Promise<"record" | "file" | null> {
     return new Promise((resolve) => {
       this.resolve = resolve;
       super.open();
@@ -33,7 +37,7 @@ export class ChoiceModal extends Modal {
       text: "🎙️ " + this.L("recordAudio"),
       cls: "mod-cta",
     });
-    recordBtn.style.flex = "1";
+    recordBtn.setCssProps({ flex: "1" });
     recordBtn.onclick = () => {
       this.resolve?.("record");
       this.close();
@@ -42,7 +46,7 @@ export class ChoiceModal extends Modal {
     const fileBtn = btnContainer.createEl("button", {
       text: "📁 " + this.L("chooseFile"),
     });
-    fileBtn.style.flex = "1";
+    fileBtn.setCssProps({ flex: "1" });
     fileBtn.onclick = () => {
       this.resolve?.("file");
       this.close();

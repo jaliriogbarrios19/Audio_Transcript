@@ -10,9 +10,9 @@ export class RecordingModal extends Modal {
   private processor: ScriptProcessorNode | null = null;
   private pcmChunks: Float32Array[] = [];
   private levelEl: HTMLElement | null = null;
-  private levelInterval: ReturnType<typeof setInterval> | null = null;
+  private levelInterval: ReturnType<typeof window.setInterval> | null = null;
   private seconds = 0;
-  private timerInterval: ReturnType<typeof setInterval> | null = null;
+  private timerInterval: ReturnType<typeof window.setInterval> | null = null;
   private timerEl: HTMLElement | null = null;
   private statusEl: HTMLElement | null = null;
   private pauseBtn: HTMLButtonElement | null = null;
@@ -164,7 +164,7 @@ export class RecordingModal extends Modal {
       if (this.statusEl)
         this.statusEl.textContent = "⏸ " + this.L("paused");
       if (this.timerInterval) {
-        clearInterval(this.timerInterval);
+        window.clearInterval(this.timerInterval);
         this.timerInterval = null;
       }
     }
@@ -172,7 +172,7 @@ export class RecordingModal extends Modal {
 
   private startTimer() {
     this.seconds = 0;
-    this.timerInterval = setInterval(() => {
+    this.timerInterval = window.setInterval(() => {
       this.seconds++;
       if (this.timerEl) {
         const m = Math.floor(this.seconds / 60);
@@ -189,18 +189,18 @@ export class RecordingModal extends Modal {
     const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
     const fillEl = this.levelEl.firstElementChild as HTMLElement | null;
 
-    this.levelInterval = setInterval(() => {
+    this.levelInterval = window.setInterval(() => {
       if (!this.analyser || !fillEl) return;
       this.analyser.getByteFrequencyData(dataArray);
       const avg =
         dataArray.reduce((sum, v) => sum + v, 0) / dataArray.length;
       const pct = Math.min(100, Math.round((avg / 128) * 100));
-      fillEl.style.width = `${pct}%`;
+      fillEl.setCssProps({ width: `${pct}%` });
     }, 80);
   }
 
   private stopAudioLevel() {
-    if (this.levelInterval) clearInterval(this.levelInterval);
+    if (this.levelInterval) window.clearInterval(this.levelInterval);
   }
 
   private stopRecording() {
@@ -232,7 +232,7 @@ export class RecordingModal extends Modal {
   }
 
   private cleanup() {
-    if (this.timerInterval) clearInterval(this.timerInterval);
+    if (this.timerInterval) window.clearInterval(this.timerInterval);
     this.stopAudioLevel();
     this.stream?.getTracks().forEach((t) => t.stop());
     this.stream = null;

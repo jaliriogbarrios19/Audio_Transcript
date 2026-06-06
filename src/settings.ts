@@ -1,4 +1,4 @@
-import { App, Notice, PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab, Setting } from "obsidian";
 import type DiaryTranscriberPlugin from "../main";
 import { TranscriptionProvider, RecordingSampleRate, RecordingMode, PROVIDERS, DIARIZATION_WARNING, LLMProvider, PromptTemplate, DEFAULT_TEMPLATES, ChatSession } from "./types";
 import { PROVIDER_REGISTRY } from "./providers/registry";
@@ -94,7 +94,9 @@ export class SettingsTab extends PluginSettingTab {
     containerEl.empty();
     const L = (k: keyof LocaleStrings) => t(k, this.plugin.getLocale());
 
-    containerEl.createEl("h2", { text: "Audio Transcript" });
+    new Setting(containerEl)
+      .setName("Audio Transcript")
+      .setHeading();
 
     this.addSpobBanner(containerEl);
 
@@ -121,8 +123,10 @@ export class SettingsTab extends PluginSettingTab {
         cls: "audio-transcript-warning",
         text: DIARIZATION_WARNING[meta.id] ?? "",
       });
-      warning.style.cssText =
-        "background: var(--background-modifier-warning); color: var(--text-warning); padding: 8px 12px; border-radius: 4px; margin-bottom: 12px;";
+      warning.setCssProps({
+        background: "var(--background-modifier-warning)", color: "var(--text-warning)",
+        padding: "8px 12px", borderRadius: "4px", marginBottom: "12px",
+      });
     }
 
     if (meta.requiresApiKey) {
@@ -176,7 +180,7 @@ export class SettingsTab extends PluginSettingTab {
             const ok = await testApiKey(meta.testEndpoint!, meta.id, key);
             btn.setButtonText(ok ? "✓ Conectado" : "✗ Fallo");
             btn.setDisabled(false);
-            setTimeout(() => btn.setButtonText("Probar"), 3000);
+            window.setTimeout(() => btn.setButtonText("Probar"), 3000);
           })
         );
     }

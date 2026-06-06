@@ -1,4 +1,4 @@
-import { App, Setting, TFolder } from "obsidian";
+import { App, requestUrl, Setting, TFolder } from "obsidian";
 import type { PluginSettings } from "./settings";
 import type { TranscriptionProvider } from "./types";
 
@@ -109,10 +109,7 @@ export async function testApiKey(
         break;
     }
 
-    const res = await fetch(url, {
-      method: "GET",
-      headers,
-    });
+    const res = await requestUrl({ url, method: "GET", headers });
 
     return res.status < 500 && res.status !== 404;
   } catch {

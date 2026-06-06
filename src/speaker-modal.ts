@@ -17,7 +17,11 @@ export class SpeakerModal extends Modal {
     return t(key, this.locale);
   }
 
-  open(): Promise<SpeakerMapping | null> {
+  open(): void {
+    super.open();
+  }
+
+  prompt(): Promise<SpeakerMapping | null> {
     return new Promise((resolve) => {
       this.resolve = resolve;
       super.open();

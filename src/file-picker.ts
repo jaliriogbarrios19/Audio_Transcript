@@ -1,6 +1,8 @@
+import { activeDocument } from "obsidian";
+
 export function pickMultipleAudioFiles(): Promise<File[] | null> {
   return new Promise((resolve) => {
-    const input = document.createElement("input");
+    const input = activeDocument.createElement("input");
     input.type = "file";
     input.accept = "audio/*";
     input.multiple = true;
@@ -15,11 +17,11 @@ export function pickMultipleAudioFiles(): Promise<File[] | null> {
 
     const cleanup = () => {
       window.removeEventListener("focus", focusHandler);
-      clearTimeout(safetyTimer);
+      window.clearTimeout(safetyTimer);
     };
 
     const focusHandler = () => {
-      setTimeout(() => {
+      window.setTimeout(() => {
         if (!input.files || input.files.length === 0) {
           done(null);
         }
@@ -35,7 +37,7 @@ export function pickMultipleAudioFiles(): Promise<File[] | null> {
       }
     };
 
-    const safetyTimer = setTimeout(() => {
+    const safetyTimer = window.setTimeout(() => {
       if (!input.files || input.files.length === 0) {
         done(null);
       }
@@ -48,7 +50,7 @@ export function pickMultipleAudioFiles(): Promise<File[] | null> {
 
 export function pickAudioFile(): Promise<File | null> {
   return new Promise((resolve) => {
-    const input = document.createElement("input");
+    const input = activeDocument.createElement("input");
     input.type = "file";
     input.accept = "audio/*";
 
@@ -62,11 +64,11 @@ export function pickAudioFile(): Promise<File | null> {
 
     const cleanup = () => {
       window.removeEventListener("focus", focusHandler);
-      clearTimeout(safetyTimer);
+      window.clearTimeout(safetyTimer);
     };
 
     const focusHandler = () => {
-      setTimeout(() => {
+      window.setTimeout(() => {
         if (!input.files || input.files.length === 0) {
           done(null);
         }
@@ -77,7 +79,7 @@ export function pickAudioFile(): Promise<File | null> {
       done(input.files?.[0] ?? null);
     };
 
-    const safetyTimer = setTimeout(() => {
+    const safetyTimer = window.setTimeout(() => {
       if (!input.files || input.files.length === 0) {
         done(null);
       }

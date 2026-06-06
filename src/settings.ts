@@ -45,6 +45,7 @@ export interface PluginSettings {
   promptTemplates: PromptTemplate[];
   chatHistory: ChatSession[];
   autoSummarize: boolean;
+  autoSummarizeTemplate: string;
 }
 
 export const DEFAULT_TEMPLATE = "**{speaker}** {time}\n{text}";
@@ -82,6 +83,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   promptTemplates: DEFAULT_TEMPLATES,
   chatHistory: [],
   autoSummarize: false,
+  autoSummarizeTemplate: "",
 };
 
 export class SettingsTab extends PluginSettingTab {
@@ -183,6 +185,21 @@ export class SettingsTab extends PluginSettingTab {
               await this.plugin.saveSettings();
             })
         );
+
+      new Setting(containerEl)
+        .setName("Template de resumen")
+        .setDesc("Prompt a usar para el auto-resumen (Predeterminado = genérico)")
+        .addDropdown((dd) => {
+          dd.addOption("", "Predeterminado");
+          for (const t of this.plugin.settings.promptTemplates) {
+            dd.addOption(t.name, t.name);
+          }
+          dd.setValue(this.plugin.settings.autoSummarizeTemplate)
+            .onChange(async (v) => {
+              this.plugin.settings.autoSummarizeTemplate = v;
+              await this.plugin.saveSettings();
+            });
+        });
     }
 
     if (meta.testEndpoint) {

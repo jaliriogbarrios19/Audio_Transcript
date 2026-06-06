@@ -1,5 +1,6 @@
 import { Transcriber } from "../transcriber";
 import { Utterance, TranscriptionOptions } from "../types";
+import { requestUrlWithSignal } from "../fetch-utils";
 
 export class WhisperTranscriber implements Transcriber {
   readonly name = "OpenAI Whisper";
@@ -19,15 +20,18 @@ export class WhisperTranscriber implements Transcriber {
       form.append("language", options.language);
     }
 
-    const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}` },
-      body: form,
-      signal: options.signal,
-    });
+    const res = await requestUrlWithSignal(
+      "https://api.openai.com/v1/audio/transcriptions",
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: form,
+        signal: options.signal,
+      }
+    );
 
-    if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as {
+    if (res.status < 200 || res.status >= 300) {
+      const err = res.json as {
         error?: { message?: string };
       } | null;
       throw new Error(
@@ -35,7 +39,7 @@ export class WhisperTranscriber implements Transcriber {
       );
     }
 
-    const data = (await res.json()) as {
+    const data = res.json as {
       text: string;
       segments?: Array<{
         start: number;

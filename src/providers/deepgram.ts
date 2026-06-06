@@ -1,5 +1,6 @@
 import { Transcriber } from "../transcriber";
 import { Utterance, TranscriptionOptions } from "../types";
+import { requestUrlWithSignal } from "../fetch-utils";
 
 export class DeepgramTranscriber implements Transcriber {
   readonly name = "Deepgram";
@@ -22,18 +23,20 @@ export class DeepgramTranscriber implements Transcriber {
 
     const url = `https://api.deepgram.com/v1/listen?${params.toString()}`;
 
-    const res = await fetch(url, {
+    const buffer = await audioBlob.arrayBuffer();
+
+    const res = await requestUrlWithSignal(url, {
       method: "POST",
       headers: {
         Authorization: `Token ${apiKey}`,
         "Content-Type": audioBlob.type || "audio/wav",
       },
-      body: audioBlob,
+      body: buffer,
       signal: options.signal,
     });
 
-    if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as {
+    if (res.status < 200 || res.status >= 300) {
+      const err = res.json as {
         err_msg?: string;
       } | null;
       throw new Error(
@@ -41,7 +44,7 @@ export class DeepgramTranscriber implements Transcriber {
       );
     }
 
-    const data = (await res.json()) as DeepgramResponse;
+    const data = res.json as DeepgramResponse;
     const raw = data.results?.utterances;
 
     if (!raw || raw.length === 0) {
@@ -51,7 +54,7 @@ export class DeepgramTranscriber implements Transcriber {
     }
 
     return raw.map((u) => ({
-      speaker: (u.speaker ?? 0) + 1, // Deepgram uses 0-based speakers
+      speaker: (u.speaker ?? 0) + 1,
       text: u.transcript?.trim() ?? "",
       start: u.start ?? 0,
       end: u.end ?? 0,

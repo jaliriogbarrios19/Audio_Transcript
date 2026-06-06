@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, Notice, TFile, Modal, Setting } from "obsidian";
+import { ItemView, WorkspaceLeaf, Notice, requestUrl, TFile, Modal, Setting } from "obsidian";
 import type DiaryTranscriberPlugin from "../../main";
 import { scanVault, getCachedEntries } from "./transcription-indexer";
 import { getAll, remove, update } from "./template-store";
@@ -88,9 +88,9 @@ export class DashboardView extends ItemView {
         }
         if (spobCfg) {
           try {
-            const res = await fetch(`${spobCfg.baseUrl}/me`, { headers: { Authorization: `Bearer ${spobCfg.apiKey}` } });
-            if (res.ok) {
-              const d = (await res.json()) as { credits?: number };
+            const res = await requestUrl({ url: `${spobCfg.baseUrl}/me`, headers: { Authorization: `Bearer ${spobCfg.apiKey}` } });
+            if (res.status >= 200 && res.status < 300) {
+              const d = res.json as { credits?: number };
               if (d.credits != null) el.setText(`$${Number(d.credits).toFixed(4)}`);
             }
           } catch { /* offline */ }

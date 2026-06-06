@@ -1,5 +1,5 @@
 import { App, Setting } from "obsidian";
-import type { PluginSettings, DEFAULT_TEMPLATE } from "./settings";
+import type { PluginSettings } from "./settings";
 import type { RecordingSampleRate, RecordingMode, LLMProvider } from "./types";
 import { LLM_PROVIDERS, LLM_MODELS, API_KEY_FIELDS } from "./types";
 import type { LocaleStrings } from "./locales";

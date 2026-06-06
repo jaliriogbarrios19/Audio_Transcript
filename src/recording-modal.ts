@@ -10,9 +10,9 @@ export class RecordingModal extends Modal {
   private processor: ScriptProcessorNode | null = null;
   private pcmChunks: Float32Array[] = [];
   private levelEl: HTMLElement | null = null;
-  private levelInterval: ReturnType<typeof window.setInterval> | null = null;
+  private levelInterval: number | null = null;
   private seconds = 0;
-  private timerInterval: ReturnType<typeof window.setInterval> | null = null;
+  private timerInterval: number | null = null;
   private timerEl: HTMLElement | null = null;
   private statusEl: HTMLElement | null = null;
   private pauseBtn: HTMLButtonElement | null = null;

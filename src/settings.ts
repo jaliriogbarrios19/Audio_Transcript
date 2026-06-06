@@ -10,6 +10,7 @@ import {
   testApiKey,
 } from "./settings-helpers";
 import { buildCommonSections } from "./settings-sections";
+import { hasSpobApi } from "./premium/auto-summarize";
 
 export interface PluginSettings {
   provider: TranscriptionProvider;
@@ -43,6 +44,7 @@ export interface PluginSettings {
   advancedModel: string;
   promptTemplates: PromptTemplate[];
   chatHistory: ChatSession[];
+  autoSummarize: boolean;
 }
 
 export const DEFAULT_TEMPLATE = "**{speaker}** {time}\n{text}";
@@ -79,6 +81,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   advancedModel: "deepseek-v4-pro",
   promptTemplates: DEFAULT_TEMPLATES,
   chatHistory: [],
+  autoSummarize: false,
 };
 
 export class SettingsTab extends PluginSettingTab {
@@ -166,6 +169,20 @@ export class SettingsTab extends PluginSettingTab {
               await this.plugin.saveSettings();
             });
         });
+    }
+
+    if (hasSpobApi(this.plugin.settings)) {
+      new Setting(containerEl)
+        .setName("Auto-resumen")
+        .setDesc("Resumir automáticamente después de cada transcripción (usa créditos spob)")
+        .addToggle((toggle) =>
+          toggle
+            .setValue(this.plugin.settings.autoSummarize)
+            .onChange(async (value) => {
+              this.plugin.settings.autoSummarize = value;
+              await this.plugin.saveSettings();
+            })
+        );
     }
 
     if (meta.testEndpoint) {

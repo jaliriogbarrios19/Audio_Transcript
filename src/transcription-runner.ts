@@ -79,6 +79,8 @@ export interface TranscriptionDeps {
   abortRef: { current: AbortController | null };
   getLocale: () => "es" | "en";
   insertAtCursor: (editor: Editor, text: string) => void;
+  onComplete?: (content: string, sourcePath: string) => Promise<void>;
+  sourcePath?: string;
 }
 
 export async function runTranscription(
@@ -185,6 +187,9 @@ export async function runTranscription(
         new Notice(
           `${L("transcriptionReady")} (${meta.label}) ${elapsed}s`
         );
+        if (deps.onComplete && deps.sourcePath) {
+          void deps.onComplete(formatted, deps.sourcePath);
+        }
         return;
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") {

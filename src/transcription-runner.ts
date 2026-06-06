@@ -116,11 +116,11 @@ export async function runTranscription(
   deps.activeNotice.current = notice;
   const startTime = Date.now();
 
-  const noticeEl = notice.noticeEl;
-  const statusEl = noticeEl.createDiv({
+  const messageEl = notice.messageEl;
+  const statusEl = messageEl.createDiv({
     text: `${L("transcribing")}...`,
   });
-  const progressBar = noticeEl.createDiv({
+  const progressBar = messageEl.createDiv({
     attr: {
       style:
         "width:100%;height:4px;background:var(--background-modifier-border);margin-top:4px;border-radius:2px;",

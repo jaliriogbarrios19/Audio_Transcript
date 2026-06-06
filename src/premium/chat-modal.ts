@@ -1,4 +1,4 @@
-import { MarkdownRenderer, Modal, Notice } from "obsidian";
+import { Component, MarkdownRenderer, Modal, Notice } from "obsidian";
 import type DiaryTranscriberPlugin from "../../main";
 import { getCachedEntries, scanVault } from "./transcription-indexer";
 import { getAll } from "./template-store";
@@ -188,7 +188,7 @@ export class ChatModal extends Modal {
           res.content,
           responseArea,
           "",
-          this
+          this as unknown as Component
         );
         responseArea.createEl("p", {
           text: `${res.usage.prompt_tokens}P + ${res.usage.completion_tokens}C tokens`,
@@ -262,7 +262,7 @@ export class ChatModal extends Modal {
       } else {
         const div = chatLog.createDiv({ cls: "at-chat-assistant-msg" });
         div.createEl("strong", { text: "🤖" });
-        MarkdownRenderer.render(this.app, msg.content, div.createDiv(), "", this);
+        MarkdownRenderer.render(this.app, msg.content, div.createDiv(), "", this as unknown as Component);
       }
     }
     contentEl.createEl("button", { text: "← Volver al chat" }).onclick = () => {

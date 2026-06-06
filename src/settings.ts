@@ -181,9 +181,11 @@ export class SettingsTab extends PluginSettingTab {
               .then((ok) => {
                 btn.setButtonText(ok ? "✓ Conectado" : "✗ Fallo");
                 btn.setDisabled(false);
-                window.setTimeout(() => btn.setButtonText("Probar"), 3000);
               })
-              .catch(() => {});
+              .catch(() => {})
+              .finally(() => {
+                window.setTimeout(() => btn.setButtonText("Probar"), 3000);
+              });
             return false;
           })
         );

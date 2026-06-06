@@ -21,16 +21,19 @@ export async function autoSummarizeContent(
 ): Promise<void> {
   if (!settings.autoSummarize || !hasSpobApi(settings)) return;
 
-  const L = (key: string) => t(key as any, locale);
-
   if (NO_SPEECH.some((m) => content.includes(m))) return;
 
   const config = getFlashConfig(settings) || getAdvancedConfig(settings);
   if (!config) return;
 
+  const template = settings.autoSummarizeTemplate
+    ? settings.promptTemplates.find((t) => t.name === settings.autoSummarizeTemplate)
+    : null;
+  const systemPrompt = template?.prompt || t("summarySystemPrompt", locale);
+
   try {
     const res = await chatCompletion(config, [
-      { role: "system", content: t("summarySystemPrompt", locale) },
+      { role: "system", content: systemPrompt },
       { role: "user", content },
     ]);
 

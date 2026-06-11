@@ -214,7 +214,7 @@ export class SettingsTab extends PluginSettingTab {
             btn.setDisabled(true);
             btn.setButtonText("Probando...");
             const key = this.plugin.settings[meta.apiKeyField] as string;
-            testApiKey(meta.testEndpoint!, meta.id, key)
+            testApiKey(meta.testEndpoint!, meta.id, key, meta.testMethod ?? "GET")
               .then((ok) => {
                 btn.setButtonText(ok ? "✓ Conectado" : "✗ Fallo");
                 btn.setDisabled(false);

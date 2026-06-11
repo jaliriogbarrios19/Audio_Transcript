@@ -41,7 +41,8 @@ export const PROVIDER_REGISTRY: Record<TranscriptionProvider, ProviderMeta> = {
     modelField: "gladiaModel",
     supportsDiarization: true,
     requiresApiKey: true,
-    testEndpoint: "https://api.gladia.io/v2/upload",
+    testEndpoint: "https://api.gladia.io/v2/pre-recorded",
+    testMethod: "POST",
   },
   deepgram: {
     id: "deepgram",
@@ -50,7 +51,7 @@ export const PROVIDER_REGISTRY: Record<TranscriptionProvider, ProviderMeta> = {
     apiKeyField: "deepgramApiKey",
     supportsDiarization: true,
     requiresApiKey: true,
-    testEndpoint: "https://api.deepgram.com/v1/listen",
+    testEndpoint: "https://api.deepgram.com/v1/models",
   },
   assemblyai: {
     id: "assemblyai",

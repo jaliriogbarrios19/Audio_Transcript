@@ -66,8 +66,14 @@ export class GladiaTranscriber implements Transcriber {
     const body: Record<string, unknown> = {
       audio_url: audioUrl,
       diarization: true,
-      language: options.language || "es",
+      language_config: {
+        languages: [options.language || "es"],
+      },
     };
+
+    if (options.model) {
+      body.model = options.model;
+    }
 
     if (options.speakerNames.length > 0) {
       body.diarization_config = {
@@ -75,7 +81,7 @@ export class GladiaTranscriber implements Transcriber {
       };
     }
 
-    const res = await requestUrlWithSignal(`${baseUrl}/transcription`, {
+    const res = await requestUrlWithSignal(`${baseUrl}/pre-recorded`, {
       method: "POST",
       headers: {
         "x-gladia-key": apiKey,

@@ -18,6 +18,7 @@ export interface PluginSettings {
   deepgramApiKey: string;
   assemblyaiApiKey: string;
   assemblyaiModel: "universal-2" | "universal-3-pro";
+  gladiaModel: "solaria-1" | "solaria-3";
   whisperApiKey: string;
   groqApiKey: string;
   whisperLocalUrl: string;
@@ -56,6 +57,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   deepgramApiKey: "",
   assemblyaiApiKey: "",
   assemblyaiModel: "universal-3-pro",
+  gladiaModel: "solaria-3",
   whisperApiKey: "",
   groqApiKey: "",
   whisperLocalUrl: "http://localhost:8080",
@@ -154,7 +156,8 @@ export class SettingsTab extends PluginSettingTab {
       addModelField(
         containerEl,
         this.plugin.settings,
-        () => this.plugin.saveSettings()
+        () => this.plugin.saveSettings(),
+        meta.id
       );
     }
 

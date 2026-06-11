@@ -42,7 +42,6 @@ export interface ProviderMeta {
   supportsDiarization: boolean;
   requiresApiKey: boolean;
   testEndpoint?: string;
-  testMethod?: "GET" | "POST";
 }
 
 export const PROVIDERS: {

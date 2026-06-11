@@ -38,9 +38,15 @@ export function getModelFor(
   settings: PluginSettings,
   providerId: TranscriptionProvider
 ): string | undefined {
-  return providerId === "assemblyai" || providerId === "spob"
-    ? settings.assemblyaiModel
-    : undefined;
+  switch (providerId) {
+    case "assemblyai":
+    case "spob":
+      return settings.assemblyaiModel;
+    case "gladia":
+      return settings.gladiaModel;
+    default:
+      return undefined;
+  }
 }
 
 async function defaultFolder(app: App): Promise<string> {

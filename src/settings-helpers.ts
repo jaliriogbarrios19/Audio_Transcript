@@ -57,8 +57,28 @@ export function addWhisperLocalUrlField(
 export function addModelField(
   container: HTMLElement,
   settings: PluginSettings,
-  saveSettings: () => Promise<void>
+  saveSettings: () => Promise<void>,
+  providerId?: string
 ): void {
+  if (providerId === "gladia") {
+    new Setting(container)
+      .setName("Modelo")
+      .setDesc(
+        "Solaria-3: maxima precision en audio europeo. Solaria-1: maxima cobertura de idiomas."
+      )
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("solaria-3", "Solaria-3 (Recomendado)")
+          .addOption("solaria-1", "Solaria-1")
+          .setValue(settings.gladiaModel)
+          .onChange(async (v: string) => {
+            settings.gladiaModel = v as "solaria-1" | "solaria-3";
+            await saveSettings();
+          })
+      );
+    return;
+  }
+
   new Setting(container)
     .setName("Modelo")
     .setDesc(

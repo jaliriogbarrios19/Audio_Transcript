@@ -38,6 +38,7 @@ export const PROVIDER_REGISTRY: Record<TranscriptionProvider, ProviderMeta> = {
     label: "Gladia",
     transcriber: new GladiaTranscriber(),
     apiKeyField: "gladiaApiKey",
+    modelField: "gladiaModel",
     supportsDiarization: true,
     requiresApiKey: true,
     testEndpoint: "https://api.gladia.io/v2/upload",

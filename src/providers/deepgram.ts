@@ -11,8 +11,7 @@ export class DeepgramTranscriber implements Transcriber {
     options: TranscriptionOptions
   ): Promise<Utterance[]> {
     const params = new URLSearchParams({
-      diarize: "true",
-      diarize_version: "2024-01-26",
+      diarize_model: "latest",
       smart_format: "true",
       utterances: "true",
     });

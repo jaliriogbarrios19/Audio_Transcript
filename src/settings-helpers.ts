@@ -106,21 +106,17 @@ export function getVaultFolders(app: App): string[] {
 export async function testApiKey(
   endpoint: string,
   provider: TranscriptionProvider,
-  key: string,
-  method: "GET" | "POST" = "GET"
+  key: string
 ): Promise<boolean> {
   try {
     let headers: Record<string, string> = {};
-    let body: string | undefined;
 
     switch (provider) {
       case "gladia":
-        headers = { "x-gladia-key": key, "Content-Type": "application/json" };
-        body = '{"audio_url":"https://example.com/test.wav"}';
+        headers = { "x-gladia-key": key };
         break;
       case "deepgram":
-        headers = { Authorization: `Token ${key}`, "Content-Type": "audio/wav" };
-        method = "POST";
+        headers = { Authorization: `Token ${key}` };
         break;
       case "assemblyai":
       case "spob":
@@ -132,7 +128,7 @@ export async function testApiKey(
         break;
     }
 
-    const res = await requestUrl({ url: endpoint, method, headers, body });
+    const res = await requestUrl({ url: endpoint, method: "GET", headers });
 
     if (res.status === 401 || res.status === 403) return false;
     return res.status < 500;

@@ -169,7 +169,7 @@ export async function runTranscription(
           signal: controller.signal,
           model: getModelFor(deps.settings, providerId),
           onProgress: (pct: number) => {
-            progressFill.style.width = `${Math.min(pct, 100)}%`;
+            progressFill.setCssProps({ width: `${Math.min(pct, 100)}%` });
           },
         });
 

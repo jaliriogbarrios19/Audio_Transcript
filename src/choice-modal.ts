@@ -1,4 +1,4 @@
-import { App, Modal } from "obsidian";
+import { App, Modal, Setting } from "obsidian";
 import { t, type LocaleStrings } from "./locales";
 
 export class ChoiceModal extends Modal {
@@ -27,7 +27,7 @@ export class ChoiceModal extends Modal {
 
   onOpen() {
     const { contentEl } = this;
-    contentEl.createEl("h3", { text: this.L("chooseAction") });
+    new Setting(contentEl).setName(this.L("chooseAction")).setHeading();
 
     const btnContainer = contentEl.createDiv({
       attr: { style: "display: flex; gap: 12px; margin-top: 16px;" },

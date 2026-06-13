@@ -35,6 +35,16 @@ export function getProviderConfig(
   return getConfig(settings, provider, model);
 }
 
+export function getFlashConfigWithProvider(settings: PluginSettings): { config: LLMConfig; provider: LLMProvider } | null {
+  const config = getFlashConfig(settings);
+  return config ? { config, provider: settings.flashProvider } : null;
+}
+
+export function getAdvancedConfigWithProvider(settings: PluginSettings): { config: LLMConfig; provider: LLMProvider } | null {
+  const config = getAdvancedConfig(settings);
+  return config ? { config, provider: settings.advancedProvider } : null;
+}
+
 function getConfig(
   settings: PluginSettings,
   provider: LLMProvider,

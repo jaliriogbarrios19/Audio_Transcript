@@ -20,6 +20,6 @@ export class TranscriptionSearchModal extends FuzzySuggestModal<TranscriptionEnt
   }
 
   onChooseItem(item: TranscriptionEntry): void {
-    this.app.workspace.openLinkText(item.path, "", false);
+    void this.app.workspace.openLinkText(item.path, "", false);
   }
 }

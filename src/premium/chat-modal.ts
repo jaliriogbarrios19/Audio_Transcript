@@ -1,4 +1,4 @@
-import { Component, MarkdownRenderer, Modal, Notice } from "obsidian";
+import { Component, MarkdownRenderer, Modal, Notice, Setting } from "obsidian";
 import type DiaryTranscriberPlugin from "../../main";
 import { getCachedEntries, scanVault } from "./transcription-indexer";
 import { getAll } from "./template-store";
@@ -41,7 +41,7 @@ export class ChatModal extends Modal {
     contentEl.empty();
     contentEl.addClass("at-chat-modal");
 
-    contentEl.createEl("h2", { text: this.L("chatTitle") });
+    new Setting(contentEl).setName(this.L("chatTitle")).setHeading();
 
     const flashCfg = getFlashConfig(this.plugin.settings);
     const advCfg = getAdvancedConfig(this.plugin.settings);
@@ -63,7 +63,7 @@ export class ChatModal extends Modal {
       const cfg = this.mode === "flash"
         ? getFlashConfig(this.plugin.settings)
         : getAdvancedConfig(this.plugin.settings);
-      const label = cfg ? cfg.model : "Sin configurar";
+      const label = cfg ? cfg.model : this.L("notConfigured");
       modeLabel.empty();
       modeLabel.createSpan({ text: label });
     };
@@ -80,11 +80,11 @@ export class ChatModal extends Modal {
     const templates = getAll(this.plugin.settings.promptTemplates);
 
     // Context selector
-    contentEl.createEl("h4", { text: this.L("contextSection") });
+    new Setting(contentEl).setName(this.L("contextSection")).setHeading();
 
     const searchInput = contentEl.createEl("input", {
       cls: "at-search-input",
-      attr: { placeholder: "Buscar nota por nombre...", type: "text" },
+      attr: { placeholder: this.L("searchNotePlaceholder"), type: "text" },
     });
     searchInput.setCssProps({ width: "100%", marginBottom: "8px", padding: "6px", borderRadius: "4px" });
 
@@ -115,7 +115,7 @@ export class ChatModal extends Modal {
     renderContext();
 
     // Template dropdown
-    contentEl.createEl("h4", { text: this.L("templateSection") });
+    new Setting(contentEl).setName(this.L("templateSection")).setHeading();
     const templateDropdown = contentEl.createEl("select", { cls: "at-template-dropdown" });
     templateDropdown.createEl("option", { text: this.L("freePrompt"), value: "" });
     for (const t of templates) {
@@ -134,7 +134,7 @@ export class ChatModal extends Modal {
     });
 
     // Chat input
-    contentEl.createEl("h4", { text: this.L("yourMessage") });
+    new Setting(contentEl).setName(this.L("yourMessage")).setHeading();
     const textarea = contentEl.createEl("textarea", {
       cls: "at-chat-input",
       attr: { rows: "4", placeholder: this.L("writeMessage") },
@@ -148,7 +148,7 @@ export class ChatModal extends Modal {
       cls: "at-send-btn",
     });
     const historyBtn = btnRow.createEl("button", { text: "📋 Historial" });
-    historyBtn.onclick = () => showHistoryModal(this.app, this.historyStore, (s) => this.loadSession(s));
+    historyBtn.onclick = () => showHistoryModal(this.app, this.historyStore, (s) => this.loadSession(s), this.plugin.getLocale());
     btnRow.createEl("button", { text: this.L("close") }).onclick = () => this.close();
 
     sendBtn.onclick = async () => {
@@ -164,7 +164,7 @@ export class ChatModal extends Modal {
         : this.plugin.settings.advancedProvider;
 
       if (!config) {
-        new Notice(`Modo ${this.mode} no configurado. Revisa Settings → IA.`);
+        new Notice(`${this.mode === "flash" ? "⚡ Flash" : "🧠 Advanced"} ${this.L("modeNotConfigured")}`);
         return;
       }
 
@@ -250,7 +250,7 @@ export class ChatModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("at-chat-modal");
-    contentEl.createEl("h2", { text: this.L("chatTitle") });
+    new Setting(contentEl).setName(this.L("chatTitle")).setHeading();
     contentEl.createEl("p", {
       text: `Modo: ${this.mode === "flash" ? "⚡ Flash" : "🧠 Advanced"}`,
       cls: "at-cost-info",
@@ -265,7 +265,7 @@ export class ChatModal extends Modal {
         void MarkdownRenderer.render(this.app, msg.content, div.createDiv(), "", this as unknown as Component);
       }
     }
-    contentEl.createEl("button", { text: "← Volver al chat" }).onclick = () => {
+    contentEl.createEl("button", { text: this.L("backToChat") }).onclick = () => {
       contentEl.empty();
       contentEl.addClass("at-chat-modal");
       void this.onOpen();

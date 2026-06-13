@@ -91,6 +91,18 @@ export interface LocaleStrings {
   summaryError: string;
   unknownError: string;
   spobBanner: string;
+  searchTranscriptions: string;
+  newTemplate: string;
+  backToChat: string;
+  editTemplate: string;
+  searchNotePlaceholder: string;
+  noChatsYet: string;
+  chatHistory: string;
+  chatHistoryEmpty: string;
+  clearHistory: string;
+  historyCleared: string;
+  modeNotConfigured: string;
+  notConfigured: string;
 }
 
 const es: LocaleStrings = {
@@ -195,110 +207,21 @@ const es: LocaleStrings = {
   summaryError: "Error al resumir",
   unknownError: "desconocido",
   spobBanner: "Hola, soy Jesús García, un psicólogo que se ha interesado en el desarrollo web para optimizar sus flujos de trabajo. Si deseas apoyar nuestro trabajo, puedes hacer una donación o utilizar nuestros servicios a un costo razonable.",
+  searchTranscriptions: "Buscar transcripciones",
+  newTemplate: "+ Nuevo template",
+  backToChat: "← Volver al chat",
+  editTemplate: "Editar template",
+  searchNotePlaceholder: "Buscar nota por nombre...",
+  noChatsYet: "No hay chats anteriores",
+  chatHistory: "Historial de chats",
+  chatHistoryEmpty: "Historial vacío",
+  clearHistory: "Limpiar historial",
+  historyCleared: "Historial limpiado",
+  modeNotConfigured: "no configurado. Revisa Settings → IA.",
+  notConfigured: "Sin configurar",
 };
 
-const en: LocaleStrings = {
-  openNoteFirst: "Open a note first",
-  micAccessFailed: "Could not access microphone. Check permissions.",
-  recorderUnsupported:
-    "Could not start recording. The format is not supported by this browser.",
-  recordingError: "Recording error.",
-  recording: "Recording",
-  paused: "Paused",
-  pause: "Pause",
-  resume: "Resume",
-  stop: "Stop",
-  transcribing: "Transcribing",
-  transcriptionReady: "Transcription ready",
-  transcriptionFailed: "Transcription failed",
-  noSpeech: "(No speech detected)",
-  noApiKey: "No API key set for",
-  diarizationWarning:
-    "This provider does not support speaker diarization. The transcription will be a single text block.",
-  testConnection: "Test",
-  testing: "Testing...",
-  connected: "✓ Connected",
-  failed: "✗ Failed",
-  chooseAction: "What do you want to do?",
-  recordAudio: "Record audio",
-  chooseFile: "Choose file",
-  speakerConfig: "Speaker configuration",
-  speakerCount: "Number of speakers",
-  startTranscription: "Start transcription",
-  providerLabel: "Provider",
-  languageLabel: "Default language",
-  languageDetectionLabel: "Language detection",
-  autoDetection: "Automatic",
-  manualDetection: "Manual",
-  outputTemplateLabel: "Output template",
-  outputTemplateDesc:
-    "Variables: {speaker}, {time}, {text}. Each speaker block is separated by a double line break.",
-  insertAsCalloutLabel: "Insert as callout",
-  insertAsCalloutDesc:
-    "Wrap the transcription in a foldable >[!transcription] block",
-  audioFolderLabel: "Recordings folder",
-  audioFolderDesc:
-    "Vault-relative path for saving audio. Empty = same folder as active note.",
-  modelLabel: "Model",
-  allApiKeys: "All API Keys",
-  apiKeysDesc: "Keys are stored locally in the plugin data.",
-  showKey: "Show",
-  hideKey: "Hide",
-  apiKeyPlaceholder: "Enter your API key",
-  whisperLocalUrlLabel: "Server URL",
-  whisperLocalUrlDesc: "whisper.cpp server URL (e.g. http://localhost:8080)",
-  recordingQualityLabel: "Recording quality",
-  recordingQualityDesc:
-    "Sets the audio sample rate. 16 kHz is the minimum for speaker diarization.",
-  sampleRate16kHz: "16 kHz (recommended, good diarization, ~1.9 MB/min)",
-  sampleRate22kHz: "22.05 kHz (better quality, ~2.6 MB/min)",
-  sampleRate44kHz: "44.1 kHz (max quality, ~5.3 MB/min)",
-  saveAudioLabel: "Save audio after transcription",
-  saveAudioDesc:
-    "Uncheck for long recordings. Audio is discarded after transcription.",
-  dashboardTitle: "Audio Transcript — Dashboard",
-  noLLMConfig:
-    "Enable an LLM provider in Settings to unlock summaries and AI chat.",
-  noLLMConfigHint: "Settings → Audio Transcript → AI (LLM Provider)",
-  credit: "Credit",
-  transcriptions: "Transcriptions",
-  templates: "Templates",
-  aiProvider: "AI Provider",
-  newChat: "New chat",
-  refreshBtn: "Refresh",
-  history: "Transcription history",
-  historyEmpty: "No transcriptions yet. Record or transcribe audio to get started.",
-  summarize: "Summarize",
-  generatingSummary: "Generating summary...",
-  summaryDone: "Summary ready",
-  summaryInserted: "Summary ready and inserted into note",
-  nothingToSummarize: "Nothing to summarize",
-  configLLM: "Configure an LLM provider in Settings.",
-  chatTitle: "AI Chat",
-  chatNoConfig: "Configure an LLM provider in Settings to use the chat.",
-  contextSection: "Context (transcriptions)",
-  noTranscriptions: "No transcriptions found. Chat works without context.",
-  templateSection: "Prompt template",
-  freePrompt: "Free prompt",
-  yourMessage: "Your message",
-  send: "Send",
-  sending: "Sending...",
-  close: "Close",
-  thinking: "Thinking...",
-  writeMessage: "Type your question...",
-  previewNoText: "(no text)",
-  transcribe: "Transcribe",
-  dateHeader: "Date",
-  noteHeader: "Note",
-  speakersHeader: "Spk.",
-  previewHeader: "Preview",
-  deepseekDirect: "DeepSeek direct",
-  summaryHeading: "Summary",
-  summarySystemPrompt: "Summarize this transcription in concise bullet points.",
-  summaryError: "Summary error",
-  unknownError: "unknown",
-  spobBanner: "Hi, I'm Jesús García, a psychologist who became interested in web development to optimize my workflows and now uses Obsidian comprehensively across the different roles of my daily life. If you'd like to support our work, you can make a donation or use our services at a reasonable cost.",
-};
+import en from "./locale-en";
 
 export const LOCALES: Record<string, LocaleStrings> = { es, en };
 

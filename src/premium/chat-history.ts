@@ -1,6 +1,7 @@
 import { Modal, Notice } from "obsidian";
 import type { ChatMessage, ChatSession } from "../types";
 import { CHAT_HISTORY_LIMIT } from "../types";
+import { t } from "../locales";
 
 export interface ChatHistoryStore {
   list(): ChatSession[];
@@ -56,19 +57,21 @@ export function buildSessionTitle(messages: ChatMessage[]): string {
 export function showHistoryModal(
   app: import("obsidian").App,
   store: ChatHistoryStore,
-  onSelect: (session: ChatSession) => void
+  onSelect: (session: ChatSession) => void,
+  locale = "es"
 ) {
+  const L = (key: string) => t(key as keyof import("../locales").LocaleStrings, locale);
   const sessions = store.list();
   if (sessions.length === 0) {
-    new Notice("No hay chats anteriores");
+    new Notice(L("noChatsYet"));
     return;
   }
   const modal = new Modal(app);
-  modal.titleEl.setText("Historial de chats");
+  modal.titleEl.setText(L("chatHistory"));
   const { contentEl: body } = modal;
   for (const session of sessions) {
     const row = body.createDiv({ cls: "at-context-row" });
-    const date = new Date(session.timestamp).toLocaleString("es", {
+    const date = new Date(session.timestamp).toLocaleString(locale === "en" ? "en" : "es", {
       day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
     });
     row.createSpan({ text: `${session.mode === "flash" ? "⚡" : "🧠"} ${session.title}` });
@@ -79,13 +82,13 @@ export function showHistoryModal(
       e.stopPropagation();
       store.remove(session.id);
       row.remove();
-      if (store.list().length === 0) { modal.close(); new Notice("Historial vacío"); }
+      if (store.list().length === 0) { modal.close(); new Notice(L("chatHistoryEmpty")); }
     };
   }
   const clearBtn = body.createEl("button", {
-    text: "Limpiar historial",
+    text: L("clearHistory"),
     cls: "at-history-clear",
   });
-  clearBtn.onclick = () => { store.clear(); modal.close(); new Notice("Historial limpiado"); };
+  clearBtn.onclick = () => { store.clear(); modal.close(); new Notice(L("historyCleared")); };
   modal.open();
 }

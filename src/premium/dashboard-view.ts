@@ -105,11 +105,8 @@ export class DashboardView extends ItemView {
       "neutral",
       undefined,
       () => {
-        const app = this.plugin.app as unknown as {
-          setting?: { open(): void; openTabById(id: string): void };
-        };
-        app.setting?.open();
-        app.setting?.openTabById("audio-transcript");
+        this.plugin.app.setting.open();
+        this.plugin.app.setting.openTabById("audio-transcript");
       }
     );
 

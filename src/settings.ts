@@ -97,6 +97,10 @@ export class SettingsTab extends PluginSettingTab {
   }
 
   display(): void {
+    this.render();
+  }
+
+  private render(): void {
     const { containerEl } = this;
     containerEl.empty();
     const L = (k: keyof LocaleStrings) => t(k, this.plugin.getLocale());
@@ -119,7 +123,7 @@ export class SettingsTab extends PluginSettingTab {
           .onChange(async (v: string) => {
             this.plugin.settings.provider = v as TranscriptionProvider;
             await this.plugin.saveSettings();
-            this.display();
+            this.render();
           });
       });
 
@@ -234,7 +238,7 @@ export class SettingsTab extends PluginSettingTab {
       this.app,
       this.plugin.settings,
       () => this.plugin.saveSettings(),
-      () => this.display(),
+      () => this.render(),
       L
     );
   }

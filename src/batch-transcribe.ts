@@ -27,13 +27,28 @@ export async function ensurePluginNote(host: PluginHost): Promise<void> {
     : `Transcripcion-${ts}.md`;
 
   if (folder) {
-    const existing = host.app.vault.getAbstractFileByPath(folder);
-    if (!existing) await host.app.vault.createFolder(folder);
+    try {
+      const existing = host.app.vault.getAbstractFileByPath(folder);
+      if (!existing) await host.app.vault.createFolder(folder);
+    } catch {
+      // folder may already exist (race condition with async vault index)
+    }
   }
 
   const existing = host.app.vault.getAbstractFileByPath(path);
   if (!existing) {
-    const file = await host.app.vault.create(path, "");
+    let file: TFile;
+    try {
+      file = await host.app.vault.create(path, "");
+    } catch {
+      // file may already exist (race condition)
+      const again = host.app.vault.getAbstractFileByPath(path);
+      if (again instanceof TFile) {
+        const leaf = host.app.workspace.getLeaf(false);
+        if (leaf) await leaf.openFile(again);
+      }
+      return;
+    }
     const leaf = host.app.workspace.getLeaf(false);
     if (leaf) await leaf.openFile(file);
   } else if (existing instanceof TFile) {

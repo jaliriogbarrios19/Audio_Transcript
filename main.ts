@@ -229,21 +229,18 @@ export default class DiaryTranscriberPlugin extends Plugin {
   }
 
   private async activateDashboard() {
-    const { workspace } = this.app;
-    let leaf = workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD)[0];
-    if (!leaf) {
-      if (Platform.isMobile) {
-        leaf = workspace.getLeaf(true);
+    try {
+      const { workspace } = this.app;
+      let leaf = workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD)[0];
+      if (!leaf) {
+        leaf = workspace.getLeaf("tab");
         await leaf.setViewState({ type: VIEW_TYPE_DASHBOARD, active: true });
-      } else {
-        const rightLeaf = workspace.getRightLeaf(false);
-        if (rightLeaf) {
-          await rightLeaf.setViewState({ type: VIEW_TYPE_DASHBOARD, active: true });
-          leaf = rightLeaf;
-        }
       }
+      workspace.setActiveLeaf(leaf, { focus: true });
+    } catch (err) {
+      console.error("[Audio Transcript] activateDashboard error:", err);
+      new Notice(`Dashboard error: ${err instanceof Error ? err.message : String(err)}`);
     }
-    if (leaf) workspace.setActiveLeaf(leaf, { focus: true });
   }
 
   async transcribeFromDashboard(): Promise<void> {

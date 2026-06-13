@@ -68,13 +68,19 @@ async function saveAudioFile(
   const filepath = folder ? `${folder}/${filename}` : filename;
 
   if (folder) {
-    const existing = app.vault.getAbstractFileByPath(folder);
-    if (!existing) {
-      await app.vault.createFolder(folder);
+    try {
+      const existing = app.vault.getAbstractFileByPath(folder);
+      if (!existing) await app.vault.createFolder(folder);
+    } catch {
+      // folder may already exist (race condition with async vault index)
     }
   }
 
-  await app.vault.createBinary(filepath, await blob.arrayBuffer());
+  try {
+    await app.vault.createBinary(filepath, await blob.arrayBuffer());
+  } catch {
+    // file may already exist (race condition)
+  }
   return filepath;
 }
 

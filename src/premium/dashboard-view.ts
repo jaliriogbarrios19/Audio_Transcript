@@ -29,31 +29,43 @@ export class DashboardView extends ItemView {
   }
 
   async onOpen() {
-    this.registerEvent(
-      this.plugin.app.workspace.on("active-leaf-change", () => {
-        if (this.plugin.app.workspace.getActiveViewOfType(DashboardView)) {
-          void this.refresh();
-        }
-      })
-    );
-    await this.refresh();
+    try {
+      this.registerEvent(
+        this.plugin.app.workspace.on("active-leaf-change", () => {
+          if (this.plugin.app.workspace.getActiveViewOfType(DashboardView)) {
+            void this.refresh();
+          }
+        })
+      );
+      await this.refresh();
+    } catch (err) {
+      console.error("[Audio Transcript] Dashboard onOpen error:", err);
+      this.contentEl.empty();
+      this.contentEl.createEl("p", { text: `Error al cargar dashboard: ${err instanceof Error ? err.message : String(err)}` });
+    }
   }
 
   async refresh() {
-    const container = this.contentEl;
-    container.empty();
-    container.addClass("at-dashboard");
+    try {
+      const container = this.contentEl;
+      container.empty();
+      container.addClass("at-dashboard");
 
-    const config = getFlashConfig(this.plugin.settings) || getAdvancedConfig(this.plugin.settings);
+      const config = getFlashConfig(this.plugin.settings) || getAdvancedConfig(this.plugin.settings);
 
-    this.entries = (await scanVault(this.plugin.app)) ?? getCachedEntries() ?? [];
-    this.renderDashboard(container, config);
+      this.entries = (await scanVault(this.plugin.app)) ?? getCachedEntries() ?? [];
+      this.renderDashboard(container, config);
+    } catch (err) {
+      console.error("[Audio Transcript] Dashboard refresh error:", err);
+      this.contentEl.empty();
+      this.contentEl.createEl("p", { text: `Error: ${err instanceof Error ? err.message : String(err)}` });
+    }
   }
 
   private renderDashboard(container: HTMLElement, config: ReturnType<typeof getFlashConfig>) {
     const flashCfg = getFlashConfig(this.plugin.settings);
     const advCfg = getAdvancedConfig(this.plugin.settings);
-    const hasSpob = this.plugin.settings.provider === "spob" || this.plugin.settings.flashProvider === "spob" || this.plugin.settings.advancedProvider === "spob";
+    const hasSpob = this.plugin.settings.provider === "spob" || this.plugin.settings.flashProvider === "spob" || this.plugin.settings.advancedProvider === "spob" || !!this.plugin.settings.spobApiKey;
 
     const header = container.createDiv({ cls: "at-header" });
     new Setting(header).setName("🎙️ " + this.L("dashboardTitle")).setHeading();
@@ -79,22 +91,15 @@ export class DashboardView extends ItemView {
     const kpiGrid = container.createDiv({ cls: "at-kpi-grid" });
     if (hasSpob) {
       this.addKPI(kpiGrid, "💰", this.L("credit"), "—", "positive", async (el) => {
-        let spobCfg: { baseUrl: string; apiKey: string } | null = flashCfg || advCfg;
-        if (!spobCfg && this.plugin.settings.provider === "spob" && this.plugin.settings.spobApiKey) {
-          spobCfg = {
-            baseUrl: this.plugin.settings.spobBaseUrl || "https://spob-backend.fly.dev",
-            apiKey: this.plugin.settings.spobApiKey,
-          };
-        }
-        if (spobCfg) {
-          try {
-            const res = await requestUrl({ url: `${spobCfg.baseUrl}/me`, headers: { Authorization: `Bearer ${spobCfg.apiKey}` } });
-            if (res.status >= 200 && res.status < 300) {
-              const d = res.json as { credits?: number };
-              if (d.credits != null) el.setText(`$${Number(d.credits).toFixed(4)}`);
-            }
-          } catch { /* offline */ }
-        }
+        if (!this.plugin.settings.spobApiKey) return;
+        try {
+          const baseUrl = this.plugin.settings.spobBaseUrl || "https://spob-backend.fly.dev";
+          const res = await requestUrl({ url: `${baseUrl}/me`, headers: { Authorization: `Bearer ${this.plugin.settings.spobApiKey}` } });
+          if (res.status >= 200 && res.status < 300) {
+            const d = res.json as { credits?: number };
+            if (d.credits != null) el.setText(`$${Number(d.credits).toFixed(4)}`);
+          }
+        } catch { /* offline */ }
       });
     }
     this.addKPI(kpiGrid, "📝", this.L("transcriptions"), String(this.entries.length), "neutral");

@@ -226,7 +226,7 @@ export class SettingsTab extends PluginSettingTab {
                 btn.setButtonText("✗ Fallo");
               } finally {
                 btn.setDisabled(false);
-                window.setTimeout(() => btn.setButtonText("Probar"), 3000);
+                window.setTimeout(() => { btn.setButtonText("Probar"); }, 3000);
               }
             })();
           })

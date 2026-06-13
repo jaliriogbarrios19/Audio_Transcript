@@ -1,5 +1,5 @@
 import { App, Notice, TFile } from "obsidian";
-import { getFlashConfig, getAdvancedConfig, chatCompletion } from "./llm-client";
+import { getFlashConfigWithProvider, getAdvancedConfigWithProvider, chatCompletion } from "./llm-client";
 import type { PluginSettings } from "../settings";
 import { t } from "../locales";
 
@@ -23,11 +23,14 @@ export async function autoSummarizeContent(
 
   if (NO_SPEECH.some((m) => content.includes(m))) return;
 
-  const config = getFlashConfig(settings) || getAdvancedConfig(settings);
-  if (!config) return;
+  const flash = getFlashConfigWithProvider(settings);
+  const advanced = getAdvancedConfigWithProvider(settings);
+  const pair = flash ?? advanced;
+  if (!pair) return;
+  const { config, provider } = pair;
 
   const template = settings.autoSummarizeTemplate
-    ? settings.promptTemplates.find((t) => t.name === settings.autoSummarizeTemplate)
+    ? settings.promptTemplates.find((tpl) => tpl.name === settings.autoSummarizeTemplate)
     : null;
   const systemPrompt = template?.prompt || t("summarySystemPrompt", locale);
 
@@ -35,7 +38,7 @@ export async function autoSummarizeContent(
     const res = await chatCompletion(config, [
       { role: "system", content: systemPrompt },
       { role: "user", content },
-    ]);
+    ], provider);
 
     const file = app.vault.getAbstractFileByPath(sourcePath);
     if (file instanceof TFile) {

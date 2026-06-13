@@ -20,7 +20,7 @@ export function buildCommonSections(
   L: (key: keyof LocaleStrings) => string
 ): void {
   // Language
-  containerEl.createEl("h3", { text: "Idioma" });
+  new Setting(containerEl).setName("Idioma").setHeading();
 
   new Setting(containerEl)
     .setName("Deteccion de idioma")
@@ -75,7 +75,7 @@ export function buildCommonSections(
   }
 
   // Output format
-  containerEl.createEl("h3", { text: "Formato de salida" });
+  new Setting(containerEl).setName("Formato de salida").setHeading();
 
   new Setting(containerEl)
     .setName("Plantilla de salida")
@@ -109,7 +109,7 @@ export function buildCommonSections(
     );
 
   // Audio folder
-  containerEl.createEl("h3", { text: "Archivos de audio" });
+  new Setting(containerEl).setName("Archivos de audio").setHeading();
 
   new Setting(containerEl)
     .setName("Carpeta de grabaciones")
@@ -177,7 +177,7 @@ export function buildCommonSections(
   const s = settings;
 
   // LLM Providers
-  containerEl.createEl("h3", { text: "IA (Proveedores LLM)" });
+  new Setting(containerEl).setName("IA (Proveedores LLM)").setHeading();
   containerEl.createEl("p", {
     text: "Configura los proveedores de IA para chat y resumenes. Elegi cual usar en modo Flash y Advanced.",
     cls: "setting-item-description",
@@ -199,7 +199,7 @@ export function buildCommonSections(
   }
 
   // Flash / Advanced mode
-  containerEl.createEl("h3", { text: "Modos de chat" });
+  new Setting(containerEl).setName("Modos de chat").setHeading();
 
   const buildModeSetting = (
     modeLabel: string,
@@ -242,7 +242,7 @@ export function buildCommonSections(
   buildModeSetting("Advanced", "advancedProvider", "advancedModel");
 
   // All API keys
-  containerEl.createEl("h3", { text: "Todas las API Keys" });
+  new Setting(containerEl).setName("Todas las API Keys").setHeading();
   containerEl.createEl("p", {
     text: "Las claves se almacenan localmente en los datos del plugin.",
     cls: "setting-item-description",

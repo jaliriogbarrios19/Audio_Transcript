@@ -1,7 +1,12 @@
-import { Modal, Notice } from "obsidian";
+import { Modal, Notice, Setting } from "obsidian";
 import { t, type LocaleStrings } from "./locales";
 import { encodeWAV } from "./wav-encoder";
 import type { RecordingSampleRate, RecordingMode } from "./types";
+import { concatenateChunks, resampleTo } from "./recording-utils";
+import {
+  initMobileRecorder,
+  stopMobileRecorder,
+} from "./recording-mobile";
 
 const WORKLET_CODE = `
 class RecorderProcessor extends AudioWorkletProcessor {
@@ -44,11 +49,17 @@ export class RecordingModal extends Modal {
   private sampleRate: RecordingSampleRate;
   private mode: RecordingMode;
 
-  // ── Mobile (MediaRecorder) state ──────────────────────────
-  private mediaRecorder: MediaRecorder | null = null;
+  // ── Mobile state ──────────────────────────────────────────
+  private mobileRecorder: MediaRecorder | null = null;
   private mobileChunks: Blob[] = [];
+  private mobileStream: MediaStream | null = null;
 
-  constructor(app: import("obsidian").App, locale = "es", sampleRate: RecordingSampleRate = 16000, mode: RecordingMode = "desktop") {
+  constructor(
+    app: import("obsidian").App,
+    locale = "es",
+    sampleRate: RecordingSampleRate = 16000,
+    mode: RecordingMode = "desktop"
+  ) {
     super(app);
     this.locale = locale;
     this.sampleRate = sampleRate;
@@ -98,11 +109,16 @@ export class RecordingModal extends Modal {
 
     this.pcmChunks = [];
 
-    const blobUrl = URL.createObjectURL(new Blob([WORKLET_CODE], { type: "application/javascript" }));
+    const blobUrl = URL.createObjectURL(
+      new Blob([WORKLET_CODE], { type: "application/javascript" })
+    );
     await this.audioContext.audioWorklet.addModule(blobUrl);
     URL.revokeObjectURL(blobUrl);
 
-    this.workletNode = new AudioWorkletNode(this.audioContext, "recorder-processor");
+    this.workletNode = new AudioWorkletNode(
+      this.audioContext,
+      "recorder-processor"
+    );
     this.workletNode.port.onmessage = (e) => {
       if (this.paused || !this.workletNode) return;
       this.pcmChunks.push(new Float32Array(e.data as Float32Array));
@@ -119,10 +135,26 @@ export class RecordingModal extends Modal {
     });
   }
 
+  private async startMobile(): Promise<Blob | null> {
+    const result = await initMobileRecorder(this.locale);
+    if (!result) return null;
+
+    this.mobileRecorder = result.recorder;
+    this.mobileChunks = result.chunks;
+    this.mobileStream = result.stream;
+
+    return new Promise((resolve) => {
+      this.resolve = resolve;
+      super.open();
+      this.startTimer();
+      this.startAudioLevel();
+    });
+  }
+
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.createEl("h3", { text: this.L("recording") + "..." });
+    new Setting(contentEl).setName(this.L("recording") + "...").setHeading();
 
     this.levelEl = contentEl.createDiv({
       attr: {
@@ -144,9 +176,7 @@ export class RecordingModal extends Modal {
 
     this.timerEl = contentEl.createEl("p", {
       text: "00:00",
-      attr: {
-        style: "font-size: 2em; text-align: center; margin: 12px 0;",
-      },
+      attr: { style: "font-size: 2em; text-align: center; margin: 12px 0;" },
     });
 
     const btnRow = contentEl.createDiv({
@@ -161,9 +191,9 @@ export class RecordingModal extends Modal {
     });
     this.pauseBtn.onclick = () => this.togglePause();
 
-    btnRow.createEl("button", {
-      text: "⏹ " + this.L("stop"),
-    }).onclick = () => this.stopRecording();
+    btnRow
+      .createEl("button", { text: "⏹ " + this.L("stop") })
+      .onclick = () => this.stopRecording();
   }
 
   private togglePause() {
@@ -172,18 +202,15 @@ export class RecordingModal extends Modal {
     if (this.paused) {
       this.workletNode.port.postMessage({ paused: false });
       this.paused = false;
-      if (this.pauseBtn)
-        this.pauseBtn.textContent = "⏸ " + this.L("pause");
+      if (this.pauseBtn) this.pauseBtn.textContent = "⏸ " + this.L("pause");
       if (this.statusEl)
         this.statusEl.textContent = "● " + this.L("recording");
       if (!this.timerInterval) this.startTimer();
     } else {
       this.workletNode.port.postMessage({ paused: true });
       this.paused = true;
-      if (this.pauseBtn)
-        this.pauseBtn.textContent = "▶ " + this.L("resume");
-      if (this.statusEl)
-        this.statusEl.textContent = "⏸ " + this.L("paused");
+      if (this.pauseBtn) this.pauseBtn.textContent = "▶ " + this.L("resume");
+      if (this.statusEl) this.statusEl.textContent = "⏸ " + this.L("paused");
       if (this.timerInterval) {
         window.clearInterval(this.timerInterval);
         this.timerInterval = null;
@@ -206,7 +233,6 @@ export class RecordingModal extends Modal {
 
   private startAudioLevel() {
     if (!this.analyser || !this.levelEl) return;
-
     const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
     const fillEl = this.levelEl.firstElementChild as HTMLElement | null;
 
@@ -252,22 +278,38 @@ export class RecordingModal extends Modal {
     this.close();
   }
 
+  private stopMobileRecording() {
+    this.stopAudioLevel();
+    stopMobileRecorder(
+      this.mobileRecorder!,
+      this.mobileChunks,
+      this.mobileStream!,
+      (blob) => {
+        this.cleanup();
+        this.resolve?.(blob);
+        this.close();
+      }
+    );
+  }
+
   private cleanup() {
     if (this.timerInterval) window.clearInterval(this.timerInterval);
     this.stopAudioLevel();
-    this.stream?.getTracks().forEach((t) => t.stop());
+    this.stream?.getTracks().forEach((tr) => tr.stop());
+    this.mobileStream?.getTracks().forEach((tr) => tr.stop());
     this.stream = null;
+    this.mobileStream = null;
     void this.audioContext?.close();
     this.audioContext = null;
     this.analyser = null;
     this.workletNode = null;
     this.pcmChunks = [];
-    this.mediaRecorder = null;
+    this.mobileRecorder = null;
     this.mobileChunks = [];
   }
 
   onClose() {
-    if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+    if (this.mobileRecorder && this.mobileRecorder.state !== "inactive") {
       this.stopMobileRecording();
       return;
     }
@@ -283,121 +325,4 @@ export class RecordingModal extends Modal {
       this.resolve = null;
     }
   }
-
-  // ── Mobile: MediaRecorder (iOS/Android) ───────────────────
-
-  private async startMobile(): Promise<Blob | null> {
-    try {
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: 1,
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        },
-      });
-    } catch {
-      new Notice(this.L("micAccessFailed"));
-      return null;
-    }
-
-    const mimeType = this.bestMobileMimeType();
-    try {
-      this.mediaRecorder = new MediaRecorder(this.stream, {
-        mimeType: mimeType || undefined,
-      });
-    } catch {
-      // Fallback: no MIME type constraint
-      this.mediaRecorder = new MediaRecorder(this.stream);
-    }
-
-    this.mobileChunks = [];
-    this.mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) this.mobileChunks.push(e.data);
-    };
-
-    this.mediaRecorder.onerror = () => {
-      new Notice(this.L("transcriptionFailed"));
-      this.cleanup();
-      this.resolve?.(null);
-      this.resolve = null;
-      this.close();
-    };
-
-    // Collect data every second for responsive stop
-    this.mediaRecorder.start(1000);
-
-    return new Promise((resolve) => {
-      this.resolve = resolve;
-      super.open();
-      this.startTimer();
-      this.startAudioLevel();
-    });
-  }
-
-  private stopMobileRecording() {
-    this.stopAudioLevel();
-    if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
-      this.mediaRecorder.onstop = () => {
-        const mimeType = this.mediaRecorder?.mimeType || "audio/webm";
-        const blob = new Blob(this.mobileChunks, { type: mimeType });
-        this.cleanup();
-        this.resolve?.(blob);
-        this.close();
-      };
-      this.mediaRecorder.stop();
-    } else {
-      const mimeType = this.mediaRecorder?.mimeType || "audio/webm";
-      const blob = new Blob(this.mobileChunks, { type: mimeType });
-      this.cleanup();
-      this.resolve?.(blob);
-      this.close();
-    }
-  }
-
-  private bestMobileMimeType(): string | null {
-    const types = [
-      "audio/webm;codecs=opus",
-      "audio/webm",
-      "audio/mp4",
-      "audio/ogg;codecs=opus",
-    ];
-    for (const t of types) {
-      if (MediaRecorder.isTypeSupported(t)) return t;
-    }
-    return null;
-  }
-}
-
-function concatenateChunks(chunks: Float32Array[]): Float32Array {
-  const totalLength = chunks.reduce((sum, c) => sum + c.length, 0);
-  const result = new Float32Array(totalLength);
-  let offset = 0;
-  for (const chunk of chunks) {
-    result.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return result;
-}
-
-function resampleTo(
-  samples: Float32Array,
-  fromRate: number,
-  toRate: number
-): Float32Array {
-  if (fromRate === toRate) return samples;
-
-  const ratio = fromRate / toRate;
-  const newLength = Math.floor(samples.length / ratio);
-  const result = new Float32Array(newLength);
-
-  for (let i = 0; i < newLength; i++) {
-    const srcIndex = i * ratio;
-    const floor = Math.floor(srcIndex);
-    const ceil = Math.min(floor + 1, samples.length - 1);
-    const t = srcIndex - floor;
-    result[i] = samples[floor] * (1 - t) + samples[ceil] * t;
-  }
-
-  return result;
 }

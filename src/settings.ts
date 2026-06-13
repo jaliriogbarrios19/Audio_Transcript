@@ -211,19 +211,20 @@ export class SettingsTab extends PluginSettingTab {
         .setDesc(`Verifica que la API key de ${meta.label} funciona`)
         .addButton((btn) =>
           btn.setButtonText("Probar").onClick(() => {
-            btn.setDisabled(true);
-            btn.setButtonText("Probando...");
-            const key = this.plugin.settings[meta.apiKeyField] as string;
-            testApiKey(meta.testEndpoint!, meta.id, key)
-              .then((ok) => {
+            void (async () => {
+              btn.setDisabled(true);
+              btn.setButtonText("Probando...");
+              const key = this.plugin.settings[meta.apiKeyField] as string;
+              try {
+                const ok = await testApiKey(meta.testEndpoint!, meta.id, key);
                 btn.setButtonText(ok ? "✓ Conectado" : "✗ Fallo");
+              } catch {
+                btn.setButtonText("✗ Fallo");
+              } finally {
                 btn.setDisabled(false);
-              })
-              .catch(() => {})
-              .finally(() => {
                 window.setTimeout(() => btn.setButtonText("Probar"), 3000);
-              });
-            return false;
+              }
+            })();
           })
         );
     }

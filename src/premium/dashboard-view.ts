@@ -3,7 +3,7 @@ import type DiaryTranscriberPlugin from "../../main";
 import { scanVault, getCachedEntries } from "./transcription-indexer";
 import { getAll, remove, update } from "./template-store";
 import { DEFAULT_TEMPLATES } from "../types";
-import { getFlashConfig, getAdvancedConfig, chatCompletion } from "./llm-client";
+import { getFlashConfig, getAdvancedConfig, getFlashConfigWithProvider, getAdvancedConfigWithProvider, chatCompletion } from "./llm-client";
 import { ChatModal } from "./chat-modal";
 import type { TranscriptionEntry } from "../types";
 import { t, type LocaleStrings } from "../locales";
@@ -55,9 +55,8 @@ export class DashboardView extends ItemView {
     const advCfg = getAdvancedConfig(this.plugin.settings);
     const hasSpob = this.plugin.settings.provider === "spob" || this.plugin.settings.flashProvider === "spob" || this.plugin.settings.advancedProvider === "spob";
 
-    container.createEl("div", { cls: "at-header" }).createEl("h2", {
-      text: "🎙️ " + this.L("dashboardTitle"),
-    });
+    const header = container.createDiv({ cls: "at-header" });
+    new Setting(header).setName("🎙️ " + this.L("dashboardTitle")).setHeading();
 
     if (!config) {
       const banner = container.createDiv({ cls: "at-banner" });
@@ -122,7 +121,7 @@ export class DashboardView extends ItemView {
     refreshBtn.onclick = () => this.refresh();
 
     // History table
-    container.createEl("h3", { text: this.L("history") });
+    new Setting(container).setName(this.L("history")).setHeading();
     if (this.entries.length === 0) {
       container.createEl("p", { text: this.L("historyEmpty"), cls: "at-empty" });
     } else {
@@ -150,7 +149,7 @@ export class DashboardView extends ItemView {
 
     if (this.entries.length > 5) {
       const searchBtn = container.createEl("button", {
-        text: "🔍 Buscar transcripciones",
+        text: "🔍 " + this.L("searchTranscriptions"),
         cls: "mod-cta",
       });
       searchBtn.setCssProps({ marginTop: "8px", width: "100%" });
@@ -158,12 +157,12 @@ export class DashboardView extends ItemView {
     }
 
     // Templates
-    container.createEl("h3", { text: this.L("templateSection") });
+    new Setting(container).setName(this.L("templateSection")).setHeading();
     const tl = container.createDiv({ cls: "at-template-list" });
     const delBtns: HTMLButtonElement[] = [];
 
     const addRow = tl.createDiv({ cls: "at-template-row", attr: { style: "justify-content:center;" } });
-    const addBtn = addRow.createEl("button", { text: "+ Nuevo template" });
+    const addBtn = addRow.createEl("button", { text: this.L("newTemplate") });
     addBtn.onclick = () => this.addTemplate();
     for (let i = 0; i < templates.length; i++) {
       const t = templates[i];
@@ -190,8 +189,11 @@ export class DashboardView extends ItemView {
   }
 
   private async summarizeEntry(entry: TranscriptionEntry) {
-    const config = getFlashConfig(this.plugin.settings) || getAdvancedConfig(this.plugin.settings);
-    if (!config) { new Notice(this.L("configLLM")); return; }
+    const flash = getFlashConfigWithProvider(this.plugin.settings);
+    const advanced = getAdvancedConfigWithProvider(this.plugin.settings);
+    const pair = flash ?? advanced;
+    if (!pair) { new Notice(this.L("configLLM")); return; }
+    const { config, provider } = pair;
 
     const noSpeech = [t("noSpeech", "es"), t("noSpeech", "en")];
     if (noSpeech.some((m) => entry.calloutContent.includes(m))) {
@@ -203,7 +205,7 @@ export class DashboardView extends ItemView {
       const res = await chatCompletion(config, [
         { role: "system", content: this.L("summarySystemPrompt") },
         { role: "user", content: entry.calloutContent },
-      ]);
+      ], provider);
       const file = this.plugin.app.vault.getAbstractFileByPath(entry.path);
       if (file instanceof TFile) {
         const current = await this.plugin.app.vault.read(file);
@@ -227,7 +229,7 @@ export class DashboardView extends ItemView {
       );
       await this.plugin.saveSettings();
       await this.refresh();
-    })(); }, current.name, current.prompt).open();
+    })(); }, current.name, current.prompt, this.plugin.getLocale()).open();
   }
 
   private async addTemplate() {
@@ -238,7 +240,7 @@ export class DashboardView extends ItemView {
       ];
       await this.plugin.saveSettings();
       await this.refresh();
-    })(); }).open();
+    })(); }, undefined, undefined, this.plugin.getLocale()).open();
   }
 
   private addKPI(
@@ -252,7 +254,7 @@ export class DashboardView extends ItemView {
       card.onclick = onClick;
     }
     card.createSpan({ text: icon, cls: "at-kpi-icon" });
-    card.createEl("h4", { text: label });
+    card.createSpan({ text: label, cls: "at-kpi-label" });
     const valEl = card.createEl("p", { text: value, cls: `at-kpi-value ${colorClass}` });
     if (asyncValue) void asyncValue(valEl);
   }
@@ -262,23 +264,29 @@ class AddTemplateModal extends Modal {
   private onSubmit: (name: string, prompt: string) => void;
   private defaultName: string;
   private defaultPrompt: string;
+  private locale: string;
 
   constructor(
     app: import("obsidian").App,
     onSubmit: (name: string, prompt: string) => void,
     defaultName = "",
-    defaultPrompt = ""
+    defaultPrompt = "",
+    locale = "es"
   ) {
     super(app);
     this.onSubmit = onSubmit;
     this.defaultName = defaultName;
     this.defaultPrompt = defaultPrompt;
+    this.locale = locale;
   }
 
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.createEl("h3", { text: this.defaultName ? "Editar template" : "Nuevo template" });
+    const title = this.defaultName
+      ? t("editTemplate", this.locale)
+      : t("newTemplate", this.locale).replace("+ ", "");
+    new Setting(contentEl).setName(title).setHeading();
 
     let name = this.defaultName;
     let prompt = this.defaultPrompt;

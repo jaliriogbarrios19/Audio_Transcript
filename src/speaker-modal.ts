@@ -30,7 +30,7 @@ export class SpeakerModal extends Modal {
 
   onOpen() {
     const { contentEl } = this;
-    contentEl.createEl("h3", { text: this.L("speakerConfig") });
+    new Setting(contentEl).setName(this.L("speakerConfig")).setHeading();
 
     new Setting(contentEl)
       .setName(this.L("speakerCount"))

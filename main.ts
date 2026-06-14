@@ -23,6 +23,7 @@ import { SpeakerMapping } from "./src/types";
 import { DashboardView, VIEW_TYPE_DASHBOARD } from "./src/premium/dashboard-view";
 import { t, type LocaleStrings } from "./src/locales";
 import { ensurePluginNote, transcribeBatch, type PluginHost } from "./src/batch-transcribe";
+import { WhatsNewModal } from "./src/whats-new-modal";
 
 export default class DiaryTranscriberPlugin extends Plugin {
   settings!: PluginSettings;
@@ -105,6 +106,8 @@ export default class DiaryTranscriberPlugin extends Plugin {
       this.statusBarItemEl.setText("IA configurada");
       void this.updateStatusBarCredits();
     }
+
+    this.checkWhatsNew();
   }
 
   onunload() {
@@ -120,6 +123,19 @@ export default class DiaryTranscriberPlugin extends Plugin {
   async saveSettings() {
     await this.saveData(this.settings);
     setSpobBaseUrl(this.settings.spobBaseUrl || "http://localhost:8080");
+  }
+
+  private checkWhatsNew(): void {
+    const currentVersion = this.manifest.version;
+    const lastSeen = this.settings.lastSeenVersion;
+
+    if (lastSeen !== currentVersion) {
+      window.setTimeout(() => {
+        new WhatsNewModal(this.app, lastSeen).open();
+        this.settings.lastSeenVersion = currentVersion;
+        void this.saveSettings();
+      }, 1000);
+    }
   }
 
   private get providerMeta() {
@@ -223,7 +239,7 @@ export default class DiaryTranscriberPlugin extends Plugin {
     const spobActive = s.flashProvider === "spob" || s.advancedProvider === "spob";
     if (!spobActive || !s.spobApiKey) return;
     try {
-      const baseUrl = s.spobBaseUrl || "https://spob-backend.fly.dev";
+      const baseUrl = s.spobBaseUrl || "https://spob.fly.dev";
       const res = await requestUrl({
         url: `${baseUrl}/me`,
         headers: { Authorization: `Bearer ${s.spobApiKey}` },

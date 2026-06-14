@@ -37,7 +37,7 @@ Configure your LLM in Settings → Audio Transcript → IA (Proveedores LLM):
 | OpenRouter | Yes |
 | Grok (xAI) | Yes |
 | GLM (Z.ai) | Yes |
-| Smart Plugins Obsidian (spob) | Yes — [get one here](https://spob-backend.fly.dev) |
+| Smart Plugins Obsidian (spob) | Yes — [get one here](https://spob.fly.dev) |
 
 ## Transcription Providers
 
@@ -49,9 +49,9 @@ Configure your LLM in Settings → Audio Transcript → IA (Proveedores LLM):
 | OpenAI Whisper | No | Pay-as-you-go | [platform.openai.com](https://platform.openai.com) |
 | Groq (Whisper) | No | Free tier | [console.groq.com](https://console.groq.com) |
 | Whisper (local) | No | Self-hosted | [whisper.cpp](https://github.com/ggerganov/whisper.cpp) |
-| **Smart Plugins Obsidian (spob)** | **Yes** | **Pay as you go** | **[spob-backend.fly.dev](https://spob-backend.fly.dev)** |
+| **Smart Plugins Obsidian (spob)** | **Yes** | **Pay as you go** | **[spob.fly.dev](https://spob.fly.dev)** |
 
-> **spob** es el proveedor por defecto. [Obtené tu API key](https://spob-backend.fly.dev) y empezá a transcribir con AssemblyAI al instante — sin configurar nada más.
+> **spob** es el proveedor por defecto. [Obtené tu API key](https://spob.fly.dev) y empezá a transcribir con AssemblyAI al instante — sin configurar nada más.
 
 > Providers without diarization produce a single text block. Use Gladia, Deepgram, or AssemblyAI for speaker separation.
 

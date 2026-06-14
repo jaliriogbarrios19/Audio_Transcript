@@ -192,8 +192,8 @@ export function buildCommonSections(
         attr: { style: "margin-top: -8px; margin-bottom: 8px;" },
       });
       link.createEl("a", {
-        text: "Obten tu API key y creditos en spob-backend.fly.dev ->",
-        href: "https://spob-backend.fly.dev",
+        text: "Obten tu API key y creditos en spob.fly.dev ->",
+        href: "https://spob.fly.dev",
       });
     }
   }
@@ -260,8 +260,8 @@ export function buildCommonSections(
     attr: { style: "margin-top: -8px; margin-bottom: 16px;" },
   });
   spobLink.createEl("a", {
-    text: "Obten tu API key en spob-backend.fly.dev ->",
-    href: "https://spob-backend.fly.dev",
+    text: "Obten tu API key en spob.fly.dev ->",
+    href: "https://spob.fly.dev",
   });
 
   addWhisperLocalUrlField(containerEl, s, save, true);

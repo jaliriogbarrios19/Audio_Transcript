@@ -47,6 +47,7 @@ export interface PluginSettings {
   chatHistory: ChatSession[];
   autoSummarize: boolean;
   autoSummarizeTemplate: string;
+  lastSeenVersion: string;
 }
 
 export const DEFAULT_TEMPLATE = "**{speaker}** {time}\n{text}";
@@ -62,7 +63,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   groqApiKey: "",
   whisperLocalUrl: "http://localhost:8080",
   spobApiKey: "",
-  spobBaseUrl: "https://spob-backend.fly.dev",
+  spobBaseUrl: "https://spob.fly.dev",
   defaultLanguage: "es",
   languageDetection: "manual",
   insertAsCallout: true,
@@ -86,6 +87,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   chatHistory: [],
   autoSummarize: false,
   autoSummarizeTemplate: "",
+  lastSeenVersion: "",
 };
 
 export class SettingsTab extends PluginSettingTab {
@@ -259,7 +261,7 @@ export class SettingsTab extends PluginSettingTab {
     });
     links.createEl("a", {
       text: "🚀 Servicios SPOB",
-      href: "https://spob-backend.fly.dev",
+      href: "https://spob.fly.dev",
     });
   }
 }

@@ -93,7 +93,7 @@ export class DashboardView extends ItemView {
       this.addKPI(kpiGrid, "💰", this.L("credit"), "—", "positive", async (el) => {
         if (!this.plugin.settings.spobApiKey) return;
         try {
-          const baseUrl = this.plugin.settings.spobBaseUrl || "https://spob-backend.fly.dev";
+          const baseUrl = this.plugin.settings.spobBaseUrl || "https://spob.fly.dev";
           const res = await requestUrl({ url: `${baseUrl}/me`, headers: { Authorization: `Bearer ${this.plugin.settings.spobApiKey}` } });
           if (res.status >= 200 && res.status < 300) {
             const d = res.json as { credits?: number };

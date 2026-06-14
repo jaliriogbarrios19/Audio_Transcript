@@ -56,7 +56,7 @@ function getConfig(
 
   let baseUrl = BASE_URLS[provider];
   if (provider === "spob") {
-    baseUrl = settings.spobBaseUrl || "https://spob-backend.fly.dev";
+    baseUrl = settings.spobBaseUrl || "https://spob.fly.dev";
   }
 
   return { baseUrl, apiKey, model };

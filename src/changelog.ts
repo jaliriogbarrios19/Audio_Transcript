@@ -9,6 +9,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: "1.1.1",
+        date: "2026-06-30",
+        changes: [
+            {
+                type: "improvement",
+                text: "Limpieza de imports no usados reportados por el bot de review.",
+            },
+        ],
+    },
+    {
         version: "1.1.0",
         date: "2026-06-30",
         changes: [

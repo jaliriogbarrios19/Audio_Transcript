@@ -17,7 +17,7 @@ export interface PluginSettings {
   gladiaApiKey: string;
   deepgramApiKey: string;
   assemblyaiApiKey: string;
-  assemblyaiModel: "universal-2" | "universal-3-pro";
+  assemblyaiModel: "universal-2" | "universal-3-pro" | "universal-3-5-pro";
   gladiaModel: "solaria-1" | "solaria-3";
   whisperApiKey: string;
   groqApiKey: string;

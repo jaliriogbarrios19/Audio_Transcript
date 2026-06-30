@@ -83,15 +83,16 @@ export function addModelField(
   new Setting(container)
     .setName("Modelo")
     .setDesc(
-      "Universal-3 Pro: maxima precision, diarizacion avanzada. Universal-2: mas rapido."
+      "Universal-3.5 Pro: maxima precision, diarizacion avanzada. Universal-3 Pro: balance precision/velocidad. Universal-2: mas rapido."
     )
     .addDropdown((dropdown) =>
       dropdown
+        .addOption("universal-3-5-pro", "Universal-3.5 Pro (Recomendado)")
         .addOption("universal-3-pro", "Universal-3 Pro")
         .addOption("universal-2", "Universal-2")
         .setValue(settings.assemblyaiModel)
         .onChange(async (v: string) => {
-          settings.assemblyaiModel = v as "universal-2" | "universal-3-pro";
+          settings.assemblyaiModel = v as "universal-2" | "universal-3-pro" | "universal-3-5-pro";
           await saveSettings();
         })
     );

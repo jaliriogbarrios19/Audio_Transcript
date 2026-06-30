@@ -3,7 +3,6 @@ import {
   MarkdownFileInfo,
   MarkdownView,
   Notice,
-  Platform,
   Plugin,
   requestUrl,
   moment,

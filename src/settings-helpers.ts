@@ -1,7 +1,6 @@
 import { App, requestUrl, Setting, TFolder } from "obsidian";
 import type { PluginSettings } from "./settings";
 import type { TranscriptionProvider } from "./types";
-import { t, type LocaleStrings } from "./locales";
 
 export function addApiKeyField(
   container: HTMLElement,

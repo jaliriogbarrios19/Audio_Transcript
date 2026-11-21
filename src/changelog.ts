@@ -8,6 +8,16 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+{
+        version: "1.2.0",
+        date: "2026-06-30",
+        changes: [
+            {
+                type: "feature",
+                text: "Nuevo proveedor Mistral Voxtral para transcripcin con diarizacin de hablantes.",
+            },
+        ],
+    },
     {
         version: "1.1.1",
         date: "2026-06-30",

@@ -14,6 +14,7 @@ const BASE_URLS: Record<LLMProvider, string> = {
   openrouter: "https://openrouter.ai/api",
   grok: "https://api.x.ai",
   glm: "https://api.z.ai",
+  mistral: "https://api.mistral.ai",
   spob: "",
   anthropic: "https://api.anthropic.com",
   gemini: "https://generativelanguage.googleapis.com",
@@ -50,7 +51,7 @@ function getConfig(
   provider: LLMProvider,
   model: string
 ): LLMConfig | null {
-  const keyField = `${{ openai: "openai", anthropic: "anthropic", deepseek: "deepseek", gemini: "gemini", openrouter: "openrouter", grok: "grok", glm: "glm", spob: "spob" }[provider]}ApiKey` as keyof PluginSettings;
+  const keyField = `${{ openai: "openai", anthropic: "anthropic", deepseek: "deepseek", gemini: "gemini", openrouter: "openrouter", grok: "grok", glm: "glm", mistral: "mistral", spob: "spob" }[provider]}ApiKey` as keyof PluginSettings;
   const apiKey = (settings[keyField] as string) || "";
   if (!apiKey) return null;
 

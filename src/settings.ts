@@ -39,6 +39,7 @@ export interface PluginSettings {
   openrouterApiKey: string;
   grokApiKey: string;
   glmApiKey: string;
+  mistralApiKey: string;
   flashProvider: LLMProvider;
   flashModel: string;
   advancedProvider: LLMProvider;
@@ -79,6 +80,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   openrouterApiKey: "",
   grokApiKey: "",
   glmApiKey: "",
+  mistralApiKey: "",
   flashProvider: "spob",
   flashModel: "deepseek-v4-flash",
   advancedProvider: "spob",

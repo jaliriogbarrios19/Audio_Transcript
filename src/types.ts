@@ -31,6 +31,7 @@ export type TranscriptionProvider =
   | "whisper"
   | "groq"
   | "whisper-local"
+  | "mistral"
   | "spob";
 
 export interface ProviderMeta {
@@ -54,6 +55,7 @@ export const PROVIDERS: {
   { value: "whisper", label: "OpenAI Whisper" },
   { value: "groq", label: "Groq (Whisper)" },
   { value: "whisper-local", label: "Whisper (local)" },
+  { value: "mistral", label: "Mistral Voxtral" },
   { value: "spob", label: "Smart Plugins Obsidian (AssemblyAI)" },
 ];
 
@@ -67,12 +69,13 @@ export const DIARIZATION_WARNING: Record<TranscriptionProvider, string | null> =
     groq: "Groq (Whisper) no tiene diarización de hablantes. La transcripción será un solo bloque de texto.",
     "whisper-local":
       "Whisper local no tiene diarización de hablantes. La transcripción será un solo bloque de texto.",
+    mistral: null,
     spob: null,
   };
 
 export type LLMProvider =
   | "openai" | "anthropic" | "deepseek" | "gemini"
-  | "openrouter" | "grok" | "glm" | "spob";
+  | "openrouter" | "grok" | "glm" | "mistral" | "spob";
 
 export interface LLMModel {
   modelId: string;
@@ -88,6 +91,7 @@ export const LLM_PROVIDERS: { value: LLMProvider; label: string }[] = [
   { value: "openrouter", label: "OpenRouter" },
   { value: "grok", label: "Grok (xAI)" },
   { value: "glm", label: "GLM (Z.ai)" },
+  { value: "mistral", label: "Mistral AI" },
   { value: "spob", label: "Smart Plugins Obsidian (DeepSeek)" },
 ];
 
@@ -126,6 +130,14 @@ export const LLM_MODELS: Record<LLMProvider, LLMModel[]> = {
     { modelId: "glm-4-plus", label: "GLM-4 Plus", description: "Top-tier. 128k ctx." },
     { modelId: "glm-4-flash", label: "GLM-4 Flash", description: "Fast, low-cost." },
   ],
+  mistral: [
+    { modelId: "mistral-large-4", label: "Mistral Large 4 (Preview)", description: "Vista previa del flagship." },
+    { modelId: "mistral-large-latest", label: "Mistral Large", description: "Flagship estable." },
+    { modelId: "mistral-medium-latest", label: "Mistral Medium", description: "Equilibrio costo/capacidad." },
+    { modelId: "mistral-small-latest", label: "Mistral Small", description: "Rápido, económico." },
+    { modelId: "codestral-latest", label: "Codestral", description: "Especializado en código." },
+    { modelId: "ministral-8b-latest", label: "Ministral 8B", description: "Ultra bajo costo." },
+  ],
   spob: [
     { modelId: "deepseek-v4-pro", label: "DeepSeek V4 Pro (spob)", description: "Vía spob." },
     { modelId: "deepseek-v4-flash", label: "DeepSeek V4 Flash (spob)", description: "Vía spob." },
@@ -136,7 +148,7 @@ export const API_KEY_FIELDS: Record<LLMProvider, string> = {
   openai: "openaiApiKey", anthropic: "anthropicApiKey",
   deepseek: "deepseekApiKey", gemini: "geminiApiKey",
   openrouter: "openrouterApiKey", grok: "grokApiKey",
-  glm: "glmApiKey", spob: "spobApiKey",
+  glm: "glmApiKey", mistral: "mistralApiKey", spob: "spobApiKey",
 };
 
 export interface TranscriptionEntry {

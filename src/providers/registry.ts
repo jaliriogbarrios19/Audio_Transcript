@@ -7,6 +7,7 @@ import { AssemblyAITranscriber } from "./assemblyai";
 import { WhisperTranscriber } from "./whisper";
 import { GroqTranscriber } from "./groq";
 import { WhisperLocalTranscriber } from "./whisper-local";
+import { MistralTranscriber } from "./mistral";
 
 let spobBaseUrl = "http://localhost:8080";
 
@@ -88,6 +89,15 @@ export const PROVIDER_REGISTRY: Record<TranscriptionProvider, ProviderMeta> = {
     supportsDiarization: false,
     requiresApiKey: false,
     testEndpoint: undefined,
+  },
+  mistral: {
+    id: "mistral",
+    label: "Mistral Voxtral",
+    transcriber: new MistralTranscriber(),
+    apiKeyField: "mistralApiKey",
+    supportsDiarization: true,
+    requiresApiKey: true,
+    testEndpoint: "https://api.mistral.ai/v1/models",
   },
   spob: {
     id: "spob",
